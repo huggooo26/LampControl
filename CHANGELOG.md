@@ -12,6 +12,14 @@ All notable changes to LampControl are documented here. The format follows
 - Freemium licensing layer (free: ON/OFF + 2 lamps; lifetime: full features).
 - Onboarding modal and refreshed settings layout.
 
+## [1.0.3] - 2026-04-25
+
+### Fixed
+
+- Release packaging now strips extended attributes before signing Sparkle
+  bundles and stages the DMG from a clean temporary directory, avoiding
+  codesign failures caused by Finder metadata on nested Sparkle helpers.
+
 ## [1.0.2] - 2026-04-25
 
 ### Fixed
@@ -52,7 +60,8 @@ All notable changes to LampControl are documented here. The format follows
   configuration guides under `docs/`).
 - MIT licence and contributing guide.
 
-[Unreleased]: https://github.com/huggooo26/LampControl/compare/v1.0.2...HEAD
+[Unreleased]: https://github.com/huggooo26/LampControl/compare/v1.0.3...HEAD
+[1.0.3]: https://github.com/huggooo26/LampControl/compare/v1.0.2...v1.0.3
 [1.0.2]: https://github.com/huggooo26/LampControl/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/huggooo26/LampControl/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/huggooo26/LampControl/releases/tag/v1.0.0

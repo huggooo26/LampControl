@@ -7,11 +7,13 @@ APP_DIR="$ROOT_DIR/dist/LampControl.app"
 INFO_PLIST_SRC="$ROOT_DIR/Info.plist"
 INFO_PLIST_DST="$APP_DIR/Contents/Info.plist"
 
-# Resolve marketing version from VERSION env var, or git tag, or fall back to Info.plist value.
+# Resolve marketing version from VERSION env var, exact git tag, or fall back to Info.plist value.
 if [[ -n "${VERSION:-}" ]]; then
   MARKETING_VERSION="${VERSION#v}"
-elif git -C "$ROOT_DIR" describe --tags --abbrev=0 >/dev/null 2>&1; then
-  MARKETING_VERSION="$(git -C "$ROOT_DIR" describe --tags --abbrev=0 | sed 's/^v//')"
+elif git -C "$ROOT_DIR" diff --quiet \
+  && git -C "$ROOT_DIR" diff --cached --quiet \
+  && git -C "$ROOT_DIR" describe --tags --exact-match --abbrev=0 >/dev/null 2>&1; then
+  MARKETING_VERSION="$(git -C "$ROOT_DIR" describe --tags --exact-match --abbrev=0 | sed 's/^v//')"
 else
   MARKETING_VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$INFO_PLIST_SRC")"
 fi
@@ -70,14 +72,63 @@ if [[ -f "$ROOT_DIR/scripts/LampControl.entitlements" ]]; then
   ENTITLEMENTS_ARG=(--entitlements "$ROOT_DIR/scripts/LampControl.entitlements")
 fi
 
-if [[ -d "$APP_DIR/Contents/Frameworks/Sparkle.framework" ]]; then
-  codesign --force --deep --options runtime --timestamp --sign "$SIGN_ID" "$APP_DIR/Contents/Frameworks/Sparkle.framework" || true
+# macOS routinely tags files copied from .build/, the Sparkle archive,
+# or simply touched by Finder with extended attributes, resource forks,
+# AppleDouble ._* files, ACLs, and Finder info. codesign rejects them
+# with "resource fork, Finder information, or similar detritus not
+# allowed". `xattr -cr` alone misses some of these, so we use `ditto`
+# which is the canonical macOS tool to copy a hierarchy while *stripping*
+# all metadata. Apply it before codesign steps; nested signing can also
+# leave fresh residue that must be stripped before the outer bundle is
+# sealed.
+strip_metadata() {
+  local target="$1"
+  local tmp="${target}.cleanup.$$"
+  xattr -cr "$target" 2>/dev/null || true
+  find "$target" -name '._*' -delete 2>/dev/null || true
+  find "$target" -name '.DS_Store' -delete 2>/dev/null || true
+  ditto --norsrc --noextattr --noacl "$target" "$tmp"
+  rm -rf "$target"
+  mv "$tmp" "$target"
+}
+
+strip_metadata "$APP_DIR"
+
+# Hardened runtime + secure timestamp only make sense with a real
+# Developer ID identity. With ad-hoc signing (SIGN_ID == "-") they cause
+# two problems:
+#   - --timestamp needs Apple's timestamp server to actually validate,
+#     which it can't do for an ad-hoc signature.
+#   - On macOS 14+ a framework re-signed ad-hoc with --options runtime
+#     fails dyld with "different Team IDs" when loaded into an ad-hoc
+#     main bundle. The Sparkle framework ships pre-signed by Sparkle's
+#     maintainers, so the moment we re-sign it the Team IDs diverge.
+# Drop both flags in the ad-hoc case; keep them when a real identity is
+# configured so notarisation can still succeed later.
+HARDENED_OPTS=()
+if [[ "$SIGN_ID" != "-" ]]; then
+  HARDENED_OPTS+=(--options runtime --timestamp)
 fi
 
-# Use ${array[@]+"${array[@]}"} so an empty ENTITLEMENTS_ARG doesn't trip
-# `set -u` (bash treats `"${empty[@]}"` as referencing an unset variable).
-codesign --force --deep --options runtime --timestamp \
+# Re-sign the Sparkle framework with the same identity as the main bundle
+# (this overwrites Sparkle's upstream signature; without this rewrite dyld
+# will refuse to load the framework at launch).
+if [[ -d "$APP_DIR/Contents/Frameworks/Sparkle.framework" ]]; then
+  codesign --force --deep \
+    ${HARDENED_OPTS[@]+"${HARDENED_OPTS[@]}"} \
+    --sign "$SIGN_ID" \
+    "$APP_DIR/Contents/Frameworks/Sparkle.framework"
+fi
+
+# Signing Sparkle's nested bundles tends to leave fresh detritus that the
+# outer codesign call would reject. Sweep again before the final sign.
+strip_metadata "$APP_DIR"
+
+# `${array[@]+"${array[@]}"}` keeps `set -u` happy when the arrays are
+# empty.
+codesign --force \
+  ${HARDENED_OPTS[@]+"${HARDENED_OPTS[@]}"} \
   ${ENTITLEMENTS_ARG[@]+"${ENTITLEMENTS_ARG[@]}"} \
-  --sign "$SIGN_ID" "$APP_DIR" || codesign --force --deep --sign - "$APP_DIR"
+  --sign "$SIGN_ID" "$APP_DIR"
 
 echo "App générée: $APP_DIR (version $MARKETING_VERSION build $BUILD_NUMBER_VALUE, signée: $SIGN_ID)"
