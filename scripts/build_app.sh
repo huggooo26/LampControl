@@ -62,8 +62,10 @@ if [[ -d "$APP_DIR/Contents/Frameworks/Sparkle.framework" ]]; then
   codesign --force --deep --options runtime --timestamp --sign "$SIGN_ID" "$APP_DIR/Contents/Frameworks/Sparkle.framework" || true
 fi
 
+# Use ${array[@]+"${array[@]}"} so an empty ENTITLEMENTS_ARG doesn't trip
+# `set -u` (bash treats `"${empty[@]}"` as referencing an unset variable).
 codesign --force --deep --options runtime --timestamp \
-  "${ENTITLEMENTS_ARG[@]}" \
+  ${ENTITLEMENTS_ARG[@]+"${ENTITLEMENTS_ARG[@]}"} \
   --sign "$SIGN_ID" "$APP_DIR" || codesign --force --deep --sign - "$APP_DIR"
 
 echo "App générée: $APP_DIR (version $MARKETING_VERSION build $BUILD_NUMBER_VALUE, signée: $SIGN_ID)"
