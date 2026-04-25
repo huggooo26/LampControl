@@ -83,13 +83,16 @@ jobs:
           SIGNING_IDENTITY: ${{ secrets.SIGNING_IDENTITY || '-' }}
         run: ./scripts/build_app.sh
 
-      - name: Notarize (skipped without Apple credentials)
-        if: ${{ secrets.APPLE_ID && secrets.APPLE_APP_PASSWORD && secrets.APPLE_TEAM_ID }}
+      - name: Notarize (skipped if Apple credentials are not configured)
         env:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
+          if [ -z "$APPLE_ID" ] || [ -z "$APPLE_APP_PASSWORD" ] || [ -z "$APPLE_TEAM_ID" ]; then
+            echo "Skipping notarization — Apple credentials are not set. The DMG will be ad-hoc signed only."
+            exit 0
+          fi
           ditto -c -k --sequesterRsrc --keepParent dist/LampControl.app dist/LampControl-notarize.zip
           xcrun notarytool submit dist/LampControl-notarize.zip \
             --apple-id "$APPLE_ID" \
@@ -164,6 +167,9 @@ jobs:
 
           echo "Generated appcast:"
           cat public/appcast.xml
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
