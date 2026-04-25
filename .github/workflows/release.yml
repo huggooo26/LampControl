@@ -90,9 +90,14 @@ jobs:
         run: |
           if [ -z "$SPARKLE_PUBLIC_KEY" ]; then
             echo "::warning::SPARKLE_PUBLIC_KEY secret is not set; appcast signature verification will fail at runtime."
-          else
-            /usr/libexec/PlistBuddy -c "Set :SUPublicEDKey $SPARKLE_PUBLIC_KEY" Info.plist
+            exit 0
           fi
+          # Strip any whitespace pasted alongside the secret so PlistBuddy
+          # writes a clean 44-char base64 string (matches the private-key
+          # handling in the Sign DMG step).
+          CLEAN_PUBLIC_KEY=$(printf '%s' "$SPARKLE_PUBLIC_KEY" | tr -d '\r\n\t ')
+          echo "Embedding SUPublicEDKey of length ${#CLEAN_PUBLIC_KEY}"
+          /usr/libexec/PlistBuddy -c "Set :SUPublicEDKey $CLEAN_PUBLIC_KEY" Info.plist
 
       - name: Build, bundle and sign app
         env:
