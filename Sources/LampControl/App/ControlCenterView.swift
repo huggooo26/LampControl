@@ -22,7 +22,6 @@ struct ControlCenterView: View {
         .frame(width: appState.preferredPopoverSize.width, height: appState.preferredPopoverSize.height)
         .foregroundStyle(ink)
         .preferredColorScheme(.light)
-        .animation(.spring(response: 0.30, dampingFraction: 0.88), value: appState.preferredPopoverSize.height)
     }
 
     private var content: some View {
@@ -48,35 +47,36 @@ struct ControlCenterView: View {
         ZStack {
             LinearGradient(
                 colors: [
-                    Color(red: 0.94, green: 0.95, blue: 0.96),
-                    Color(red: 0.88, green: 0.89, blue: 0.91),
-                    Color(red: 0.98, green: 0.98, blue: 0.99)
+                    Color(red: 0.965, green: 0.972, blue: 0.982),
+                    Color(red: 0.905, green: 0.918, blue: 0.938),
+                    Color(red: 0.984, green: 0.986, blue: 0.992)
                 ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
 
-            Circle()
-                .fill(Color.white.opacity(0.30))
-                .frame(width: 210, height: 210)
-                .offset(x: -150, y: -230)
-                .blur(radius: 34)
+            LinearGradient(
+                colors: [
+                    Color.white.opacity(0.42),
+                    Color.clear,
+                    Color.black.opacity(0.045)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
 
-            Circle()
-                .fill(Color.black.opacity(0.08))
-                .frame(width: 240, height: 240)
-                .offset(x: 150, y: 205)
-                .blur(radius: 40)
-
-            Circle()
-                .fill(Color.white.opacity(0.22))
-                .frame(width: 180, height: 180)
-                .offset(x: 120, y: -130)
-                .blur(radius: 34)
+            LinearGradient(
+                colors: [
+                    Color.white.opacity(0.28),
+                    Color.clear
+                ],
+                startPoint: .leading,
+                endPoint: .trailing
+            )
 
             Rectangle()
                 .fill(.ultraThinMaterial)
-                .opacity(0.52)
+                .opacity(0.42)
         }
         .ignoresSafeArea()
     }
@@ -111,9 +111,8 @@ struct ControlCenterView: View {
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(muted)
                     .frame(width: 34, height: 34)
-                    .liquidGlassSurface(radius: 13, interactive: true)
             }
-            .buttonStyle(.plain)
+            .liquidGlassButtonStyle()
             .help("Quitter l'app")
         }
     }
@@ -140,20 +139,11 @@ struct ControlCenterView: View {
                 .foregroundStyle(isActive ? Color.white : muted)
                 .frame(maxWidth: .infinity)
                 .frame(height: 34)
-                .background(Capsule().fill(isActive ? accent.opacity(0.92) : Color.clear))
-                .overlay {
-                    if isActive {
-                        Capsule()
-                            .fill(
-                                LinearGradient(
-                                    colors: [Color.white.opacity(0.18), Color.white.opacity(0)],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                            )
-                    }
-                }
-                .shadow(color: isActive ? accent.opacity(0.20) : .clear, radius: 10, x: 0, y: 5)
+                .liquidGlassSurface(
+                    radius: 16,
+                    tint: isActive ? accent.opacity(0.58) : Color.clear,
+                    interactive: true
+                )
         }
         .buttonStyle(.plain)
     }
@@ -220,30 +210,31 @@ extension View {
 
     private func fallbackGlassSurface(radius: CGFloat, tint: Color?) -> some View {
         self
-            .background(.thinMaterial, in: RoundedRectangle(cornerRadius: radius, style: .continuous))
             .background(
                 LinearGradient(
                     colors: [
-                        Color.white.opacity(0.58),
-                        (tint ?? Color.white).opacity(0.18)
+                        Color.white.opacity(0.50),
+                        (tint ?? Color.white).opacity(0.20),
+                        Color.white.opacity(0.16)
                     ],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 ),
                 in: RoundedRectangle(cornerRadius: radius, style: .continuous)
             )
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: radius, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: radius, style: .continuous)
                     .strokeBorder(
                         LinearGradient(
-                            colors: [Color.white.opacity(0.82), Color.white.opacity(0.24)],
+                            colors: [Color.white.opacity(0.78), Color.white.opacity(0.24), Color.black.opacity(0.05)],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         ),
-                        lineWidth: 1
+                        lineWidth: 0.8
                     )
             )
-            .shadow(color: Color.black.opacity(0.07), radius: 20, x: 0, y: 12)
+            .shadow(color: Color.black.opacity(0.045), radius: 12, x: 0, y: 7)
     }
 
     @ViewBuilder
@@ -255,7 +246,12 @@ extension View {
                 self.buttonStyle(.glass)
             }
         } else {
-            self.buttonStyle(.plain)
+            self
+                .buttonStyle(.plain)
+                .fallbackGlassSurface(
+                    radius: prominent ? 18 : 13,
+                    tint: prominent ? LCTheme.accent.opacity(0.35) : Color.white.opacity(0.08)
+                )
         }
     }
 }

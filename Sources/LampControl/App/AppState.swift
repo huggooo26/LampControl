@@ -62,6 +62,24 @@ final class AppState: ObservableObject {
         }
     }
 
+    func saveSettingsAndSync() async {
+        await runBusy {
+            let saved = try settingsStore.save(settings)
+            settings = saved.settings
+            hasSecret = saved.hasSecret
+            deviceService = nil
+
+            let service = try makeDeviceService()
+            let synced = try await service.syncLamps()
+            lamps = synced
+            selectedLampIds = selectedLampIds.intersection(Set(synced.map(\.id)))
+            expandedLampIds = expandedLampIds.intersection(Set(synced.map(\.id)))
+            lastSyncDate = Date()
+            message = synced.isEmpty ? "Réglages enregistrés. Aucune lampe compatible trouvée." : "\(synced.count) lampe(s) synchronisée(s)."
+            selectedTab = .lamps
+        }
+    }
+
     func syncLamps(silent: Bool = false) async {
         guard canSync else { return }
 
@@ -113,13 +131,20 @@ final class AppState: ObservableObject {
 
     func commitBrightness(_ lamp: LampDevice, value: Int) async {
         do {
-            let service = try makeDeviceService()
-            let updated: LampDevice
-            if lamp.capabilities.colorCode != nil {
-                updated = try await service.setColorBrightness(deviceId: lamp.id, value: value)
-            } else {
-                updated = try await service.setBrightness(deviceId: lamp.id, value: value)
-            }
+            let updated = try await makeDeviceService().setBrightness(deviceId: lamp.id, value: value)
+            updateLamp(updated)
+        } catch {
+            message = error.localizedDescription
+        }
+    }
+
+    func previewTemperature(_ lamp: LampDevice, value: Int) {
+        updateLamp(lamp.withTemperature(value))
+    }
+
+    func commitTemperature(_ lamp: LampDevice, value: Int) async {
+        do {
+            let updated = try await makeDeviceService().setTemperature(deviceId: lamp.id, value: value)
             updateLamp(updated)
         } catch {
             message = error.localizedDescription
@@ -231,7 +256,11 @@ final class AppState: ObservableObject {
 
         height += 37
 
-        if lamp.capabilities.colorCode != nil || lamp.capabilities.brightness != nil {
+        if lamp.capabilities.colorCode != nil || lamp.capabilities.brightness != nil || lamp.capabilities.temperature != nil {
+            height += 30
+        }
+
+        if lamp.capabilities.temperature != nil {
             height += 30
         }
 

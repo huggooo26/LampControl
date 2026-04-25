@@ -12,6 +12,36 @@ All notable changes to LampControl are documented here. The format follows
 - Freemium licensing layer (free: ON/OFF + 2 lamps; lifetime: full features).
 - Onboarding modal and refreshed settings layout.
 
+## [1.0.5] - 2026-04-25
+
+### Added
+
+- Guided Tuya setup checklist in Settings with completion state and a direct
+  configuration guide shortcut.
+- "Save and test" Settings action that stores credentials and immediately
+  runs a lamp sync.
+- Warm/cool white temperature controls for Tuya lamps that expose
+  `temp_value` or `temp_value_v2`.
+
+### Fixed
+
+- Tuya ON/OFF commands now use the switch code reported by each device
+  instead of assuming every lamp supports `switch_led`.
+- Warm/cool white updates no longer force `work_mode = white`, which some
+  white-only E27 bulbs reject with Tuya error 2008.
+- RGB+CCT bulbs now use their dedicated `bright_value` capability for
+  brightness instead of incorrectly changing the HSV color value.
+- Legacy Tuya `colour_data` colors are now scaled to the older 0...255
+  saturation/value range instead of the v2 0...1000 range.
+- Color and white-temperature updates retry without `work_mode` when a device
+  rejects the batched mode switch.
+- Tuya command failures now include the command codes that were attempted,
+  making device-specific compatibility bugs easier to diagnose.
+- Popover resizing is now debounced and the global size animation removed so
+  sliders feel more responsive.
+- Liquid Glass fallbacks are lighter, less shadow-heavy, and button surfaces
+  stay visible on macOS versions without native glass button styles.
+
 ## [1.0.4] - 2026-04-25
 
 ### Fixed
@@ -67,7 +97,8 @@ All notable changes to LampControl are documented here. The format follows
   configuration guides under `docs/`).
 - MIT licence and contributing guide.
 
-[Unreleased]: https://github.com/huggooo26/LampControl/compare/v1.0.4...HEAD
+[Unreleased]: https://github.com/huggooo26/LampControl/compare/v1.0.5...HEAD
+[1.0.5]: https://github.com/huggooo26/LampControl/compare/v1.0.4...v1.0.5
 [1.0.4]: https://github.com/huggooo26/LampControl/compare/v1.0.3...v1.0.4
 [1.0.3]: https://github.com/huggooo26/LampControl/compare/v1.0.2...v1.0.3
 [1.0.2]: https://github.com/huggooo26/LampControl/compare/v1.0.1...v1.0.2

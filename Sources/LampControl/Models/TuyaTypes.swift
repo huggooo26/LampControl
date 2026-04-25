@@ -6,6 +6,7 @@ struct LampDevice: Identifiable, Codable, Equatable {
     var online: Bool
     var power: Bool
     var brightness: Int?
+    var temperature: Int?
     var color: HSVColor?
     var workMode: String?
     var capabilities: LightCapabilities
@@ -18,13 +19,21 @@ struct LampDevice: Identifiable, Codable, Equatable {
 
     func withBrightness(_ value: Int) -> LampDevice {
         var next = self
-        if next.capabilities.colorCode != nil {
+        if next.capabilities.brightness != nil {
+            next.brightness = value
+        } else if next.capabilities.colorCode != nil {
             next.color = (next.color ?? .warm).withValue(value)
             next.workMode = "colour"
             next.power = true
-        } else {
-            next.brightness = value
         }
+        return next
+    }
+
+    func withTemperature(_ value: Int) -> LampDevice {
+        var next = self
+        next.temperature = value
+        next.power = true
+        next.workMode = "white"
         return next
     }
 
@@ -61,11 +70,27 @@ struct HSVColor: Codable, Equatable, Hashable {
     static let defaultColorValue = 1000
 
     func scaled(for code: String) -> HSVColor {
-        clamped(maxSaturation: 1000, maxValue: 1000)
+        if code == "colour_data" {
+            return HSVColor(
+                h: min(360, max(0, h)),
+                s: min(255, max(0, Int(round(Double(s) / 1000.0 * 255.0)))),
+                v: min(255, max(1, Int(round(Double(v) / 1000.0 * 255.0))))
+            )
+        }
+
+        return clamped(maxSaturation: 1000, maxValue: 1000)
     }
 
     func normalized(from code: String) -> HSVColor {
-        clamped(maxSaturation: 1000, maxValue: 1000)
+        if code == "colour_data" {
+            return HSVColor(
+                h: min(360, max(0, h)),
+                s: min(1000, max(0, Int(round(Double(s) / 255.0 * 1000.0)))),
+                v: min(1000, max(10, Int(round(Double(v) / 255.0 * 1000.0))))
+            )
+        }
+
+        return clamped(maxSaturation: 1000, maxValue: 1000)
     }
 
     private func clamped(maxSaturation: Int, maxValue: Int) -> HSVColor {

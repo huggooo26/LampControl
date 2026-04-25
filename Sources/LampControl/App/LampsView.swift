@@ -448,6 +448,11 @@ private struct LampRow: View {
                     .font(.system(size: 10, weight: .semibold))
                     .foregroundStyle(muted)
                     .frame(width: 32, alignment: .trailing)
+            } else if let temperature = temperatureCapability {
+                Text("\(temperaturePercentage(for: temperature))%")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(muted)
+                    .frame(width: 32, alignment: .trailing)
             }
         }
         .frame(maxWidth: .infinity)
@@ -500,6 +505,34 @@ private struct LampRow: View {
                         .font(.system(size: 10, weight: .semibold))
                         .foregroundStyle(muted)
                         .frame(width: 32, alignment: .trailing)
+                }
+            }
+
+            if let temperature = temperatureCapability {
+                HStack(spacing: 9) {
+                    Image(systemName: "thermometer.sun")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(muted)
+                        .frame(width: 14)
+
+                    Slider(
+                        value: Binding(
+                            get: { Double(temperatureValue(for: temperature)) },
+                            set: { appState.previewTemperature(lamp, value: Int($0)) }
+                        ),
+                        in: Double(temperature.min)...Double(temperature.max),
+                        step: Double(temperature.step),
+                        onEditingChanged: { editing in
+                            guard !editing else { return }
+                            Task { await appState.commitTemperature(lamp, value: temperatureValue(for: temperature)) }
+                        }
+                    )
+                    .disabled(!lamp.online)
+
+                    Text(temperatureLabel(for: temperature))
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(muted)
+                        .frame(width: 58, alignment: .trailing)
                 }
             }
 
@@ -556,21 +589,44 @@ private struct LampRow: View {
     }
 
     private var brightnessCapability: NumericCapability? {
+        if let brightness = lamp.capabilities.brightness {
+            return brightness
+        }
         if lamp.capabilities.colorCode != nil {
             return NumericCapability(code: "colour_value", min: 10, max: 1000, step: 1)
         }
-        return lamp.capabilities.brightness
+        return nil
+    }
+
+    private var temperatureCapability: NumericCapability? {
+        lamp.capabilities.temperature
     }
 
     private func brightnessValue(for capability: NumericCapability) -> Int {
+        if lamp.capabilities.brightness != nil {
+            return min(capability.max, max(capability.min, lamp.brightness ?? capability.min))
+        }
         if lamp.capabilities.colorCode != nil {
             return min(capability.max, max(capability.min, lamp.color?.v ?? HSVColor.defaultColorValue))
         }
-        return min(capability.max, max(capability.min, lamp.brightness ?? capability.min))
+        return capability.min
     }
 
     private func brightnessPercentage(for capability: NumericCapability) -> Int {
         Int(round(Double(brightnessValue(for: capability)) / Double(capability.max) * 100))
+    }
+
+    private func temperatureValue(for capability: NumericCapability) -> Int {
+        min(capability.max, max(capability.min, lamp.temperature ?? capability.min))
+    }
+
+    private func temperaturePercentage(for capability: NumericCapability) -> Int {
+        let range = max(1, capability.max - capability.min)
+        return Int(round(Double(temperatureValue(for: capability) - capability.min) / Double(range) * 100))
+    }
+
+    private func temperatureLabel(for capability: NumericCapability) -> String {
+        "\(temperaturePercentage(for: capability))% blanc"
     }
 }
 

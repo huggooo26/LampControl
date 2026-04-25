@@ -25,10 +25,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         popover.contentViewController = NSHostingController(rootView: ControlCenterView().environmentObject(appState))
 
         appState.objectWillChange
+            .debounce(for: .milliseconds(90), scheduler: RunLoop.main)
             .sink { [weak self] _ in
-                DispatchQueue.main.async {
-                    self?.updatePopoverSize(animated: true)
-                }
+                self?.updatePopoverSize(animated: true)
             }
             .store(in: &cancellables)
     }
@@ -111,7 +110,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
 
         if animated, popover.isShown {
             NSAnimationContext.runAnimationGroup { context in
-                context.duration = 0.24
+                context.duration = 0.18
                 context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
                 popover.contentSize = size
             }

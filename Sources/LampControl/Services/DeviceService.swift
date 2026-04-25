@@ -22,23 +22,42 @@ final class DeviceService {
     }
 
     func setPower(deviceId: String, value: Bool) async throws -> LampDevice {
-        try await sendCommand(deviceId: deviceId, code: "switch_led", value: .bool(value))
+        let lamp = try requireLamp(deviceId)
+        guard let switchCode = lamp.capabilities.switchCode else {
+            throw LampControlError.tuya("Cette lampe ne déclare pas de commande ON/OFF.")
+        }
+
+        try await sendCommand(deviceId: deviceId, code: switchCode, value: .bool(value))
         return try update(deviceId: deviceId) { $0.power = value }
     }
 
     func setBrightness(deviceId: String, value: Int) async throws -> LampDevice {
         let lamp = try requireLamp(deviceId)
-        if lamp.capabilities.colorCode != nil {
-            return try await setColorBrightness(deviceId: deviceId, value: value)
-        }
-
         guard let brightness = lamp.capabilities.brightness else {
+            if lamp.capabilities.colorCode != nil {
+                return try await setColorBrightness(deviceId: deviceId, value: value)
+            }
             throw LampControlError.tuya("Cette lampe ne déclare pas de réglage de luminosité.")
         }
 
         let safeValue = min(brightness.max, max(brightness.min, value))
-        try await sendCommand(deviceId: deviceId, code: brightness.code, value: .int(safeValue))
-        return try update(deviceId: deviceId) { $0.brightness = safeValue }
+        var commands: [TuyaCommand] = []
+        if let switchCode = lamp.capabilities.switchCode {
+            commands.append(TuyaCommand(code: switchCode, value: .bool(true)))
+        }
+        if lamp.capabilities.colorCode != nil, let workModeCode = lamp.capabilities.workModeCode {
+            commands.append(TuyaCommand(code: workModeCode, value: .string("white")))
+        }
+        commands.append(TuyaCommand(code: brightness.code, value: .int(safeValue)))
+
+        try await sendCommands(deviceId: deviceId, commands: commands)
+        return try update(deviceId: deviceId) {
+            $0.power = true
+            $0.brightness = safeValue
+            if lamp.capabilities.colorCode != nil {
+                $0.workMode = "white"
+            }
+        }
     }
 
     func setColorBrightness(deviceId: String, value: Int) async throws -> LampDevice {
@@ -51,6 +70,31 @@ final class DeviceService {
         return try await setColor(deviceId: deviceId, color: currentColor)
     }
 
+    func setTemperature(deviceId: String, value: Int) async throws -> LampDevice {
+        let lamp = try requireLamp(deviceId)
+        guard let temperature = lamp.capabilities.temperature else {
+            throw LampControlError.tuya("Cette lampe ne déclare pas de réglage blanc chaud/froid.")
+        }
+
+        let safeValue = min(temperature.max, max(temperature.min, value))
+        var commands: [TuyaCommand] = []
+        if let switchCode = lamp.capabilities.switchCode {
+            commands.append(TuyaCommand(code: switchCode, value: .bool(true)))
+        }
+        let workModeCode = lamp.capabilities.colorCode == nil ? nil : lamp.capabilities.workModeCode
+        if let workModeCode {
+            commands.append(TuyaCommand(code: workModeCode, value: .string("white")))
+        }
+        commands.append(TuyaCommand(code: temperature.code, value: .int(safeValue)))
+
+        try await sendCommandsWithModeFallback(deviceId: deviceId, commands: commands, workModeCode: workModeCode)
+        return try update(deviceId: deviceId) {
+            $0.power = true
+            $0.temperature = safeValue
+            $0.workMode = "white"
+        }
+    }
+
     func setColor(deviceId: String, color: HSVColor) async throws -> LampDevice {
         let lamp = try requireLamp(deviceId)
         guard let colorCode = lamp.capabilities.colorCode else {
@@ -61,16 +105,19 @@ final class DeviceService {
         if let switchCode = lamp.capabilities.switchCode {
             commands.append(TuyaCommand(code: switchCode, value: .bool(true)))
         }
-        if let workModeCode = lamp.capabilities.workModeCode {
+        let workModeCode = lamp.capabilities.workModeCode
+        if let workModeCode {
             commands.append(TuyaCommand(code: workModeCode, value: .string("colour")))
         }
         commands.append(TuyaCommand(code: colorCode, value: .color(color.scaled(for: colorCode))))
 
-        try await sendCommands(deviceId: deviceId, commands: commands)
+        try await sendCommandsWithModeFallback(deviceId: deviceId, commands: commands, workModeCode: workModeCode)
         return try update(deviceId: deviceId) {
             $0.power = true
             $0.color = color
-            $0.brightness = color.v
+            if $0.capabilities.brightness == nil {
+                $0.brightness = color.v
+            }
             $0.workMode = "colour"
         }
     }
@@ -84,15 +131,18 @@ final class DeviceService {
         }
 
         let status = Dictionary(uniqueKeysWithValues: (device.status ?? []).map { ($0.code, $0.value) })
+        let switchCode = capabilities.switchCode
         let brightnessCode = capabilities.brightness?.code
+        let temperatureCode = capabilities.temperature?.code
         let colorCode = capabilities.colorCode
 
         return LampDevice(
             id: device.id,
             name: device.name,
             online: device.online,
-            power: status["switch_led"]?.boolValue ?? false,
+            power: switchCode.flatMap { status[$0]?.boolValue } ?? false,
             brightness: brightnessCode.flatMap { status[$0]?.intValue } ?? capabilities.brightness?.min,
+            temperature: temperatureCode.flatMap { status[$0]?.intValue } ?? capabilities.temperature?.min,
             color: colorCode.flatMap { status[$0]?.hsvValue?.normalized(from: $0) },
             workMode: status["work_mode"]?.stringValue,
             capabilities: capabilities
@@ -105,8 +155,7 @@ final class DeviceService {
             throw LampControlError.offline
         }
 
-        let body = TuyaCommandBody(commands: [TuyaCommand(code: code, value: value)])
-        let _: EmptyTuyaResult = try await client.post("/v1.0/devices/\(urlPath(deviceId))/commands", body: body)
+        try await postCommands(deviceId: deviceId, commands: [TuyaCommand(code: code, value: value)])
     }
 
     private func sendCommands(deviceId: String, commands: [TuyaCommand]) async throws {
@@ -115,8 +164,34 @@ final class DeviceService {
             throw LampControlError.offline
         }
 
-        let body = TuyaCommandBody(commands: commands)
-        let _: EmptyTuyaResult = try await client.post("/v1.0/devices/\(urlPath(deviceId))/commands", body: body)
+        try await postCommands(deviceId: deviceId, commands: commands)
+    }
+
+    private func sendCommandsWithModeFallback(deviceId: String, commands: [TuyaCommand], workModeCode: String?) async throws {
+        do {
+            try await sendCommands(deviceId: deviceId, commands: commands)
+        } catch {
+            guard let workModeCode else {
+                throw error
+            }
+
+            let fallbackCommands = commands.filter { $0.code != workModeCode }
+            guard fallbackCommands.count != commands.count else {
+                throw error
+            }
+
+            try await sendCommands(deviceId: deviceId, commands: fallbackCommands)
+        }
+    }
+
+    private func postCommands(deviceId: String, commands: [TuyaCommand]) async throws {
+        do {
+            let body = TuyaCommandBody(commands: commands)
+            let _: EmptyTuyaResult = try await client.post("/v1.0/devices/\(urlPath(deviceId))/commands", body: body)
+        } catch {
+            let codes = commands.map(\.code).joined(separator: ", ")
+            throw LampControlError.tuya("\(error.localizedDescription) — commandes: \(codes)")
+        }
     }
 
     private func requireLamp(_ deviceId: String) throws -> LampDevice {
@@ -138,7 +213,7 @@ final class DeviceService {
         let byCode = Dictionary(uniqueKeysWithValues: functions.map { ($0.code, $0) })
 
         return LightCapabilities(
-            switchCode: byCode["switch_led"] == nil ? nil : "switch_led",
+            switchCode: firstSupportedCode(in: byCode, candidates: ["switch_led", "switch", "switch_1", "switch_light", "switch_lamp"]),
             brightness: parseNumeric(byCode["bright_value_v2"] ?? byCode["bright_value"]),
             temperature: parseNumeric(byCode["temp_value_v2"] ?? byCode["temp_value"]),
             colorCode: byCode["colour_data_v2"] == nil ? (byCode["colour_data"] == nil ? nil : "colour_data") : "colour_data_v2",
@@ -161,6 +236,10 @@ final class DeviceService {
         }
 
         return NumericCapability(code: spec.code, min: 0, max: 1000, step: 1)
+    }
+
+    private func firstSupportedCode(in specs: [String: TuyaFunctionSpec], candidates: [String]) -> String? {
+        candidates.first { specs[$0] != nil }
     }
 
     private func urlPath(_ value: String) -> String {
