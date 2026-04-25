@@ -6,6 +6,27 @@ All notable changes to LampControl are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- Settings now use an Apple Settings-inspired menu/submenu layout with
+  dedicated Tuya, devices, updates, and about panels.
+
+### Changed
+
+- The app now follows the Mac's current light or dark appearance instead of
+  forcing the light theme.
+- Static glass surfaces now use a calmer fallback rendering to avoid visible
+  wave/refraction artifacts in dense dark-mode lists.
+- Popover rendering now favors lightweight surfaces and disables resize/open
+  animations so sliders and buttons remain responsive.
+
+### Fixed
+
+- RGB color changes preserve the current color brightness value instead of
+  unexpectedly dimming compatible LED strips.
+- Tuya `colour_data` scaling now follows the device specification when
+  available, avoiding 0...255 scaling on LED strips that expect 0...1000 HSV.
+
 ### Planned
 
 - Multi-vendor support (Philips Hue, LIFX, Yeelight, Govee).

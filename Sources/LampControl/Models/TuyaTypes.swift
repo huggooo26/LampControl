@@ -51,6 +51,7 @@ struct LightCapabilities: Codable, Equatable {
     var brightness: NumericCapability?
     var temperature: NumericCapability?
     var colorCode: String?
+    var colorValueScale: Int?
     var workModeCode: String?
 }
 
@@ -69,8 +70,8 @@ struct HSVColor: Codable, Equatable, Hashable {
     static let warm = HSVColor(h: 42, s: 420, v: 900)
     static let defaultColorValue = 1000
 
-    func scaled(for code: String) -> HSVColor {
-        if code == "colour_data" {
+    func scaled(for code: String, valueScale: Int? = nil) -> HSVColor {
+        if code == "colour_data", valueScale == 255 {
             return HSVColor(
                 h: min(360, max(0, h)),
                 s: min(255, max(0, Int(round(Double(s) / 1000.0 * 255.0)))),
@@ -81,8 +82,8 @@ struct HSVColor: Codable, Equatable, Hashable {
         return clamped(maxSaturation: 1000, maxValue: 1000)
     }
 
-    func normalized(from code: String) -> HSVColor {
-        if code == "colour_data" {
+    func normalized(from code: String, valueScale: Int? = nil) -> HSVColor {
+        if code == "colour_data", valueScale == 255 {
             return HSVColor(
                 h: min(360, max(0, h)),
                 s: min(1000, max(0, Int(round(Double(s) / 255.0 * 1000.0)))),
@@ -103,6 +104,10 @@ struct HSVColor: Codable, Equatable, Hashable {
 
     func vivid() -> HSVColor {
         HSVColor(h: h, s: max(650, s), v: HSVColor.defaultColorValue)
+    }
+
+    func vividSaturation() -> HSVColor {
+        HSVColor(h: h, s: max(650, s), v: v)
     }
 
     func withValue(_ value: Int) -> HSVColor {

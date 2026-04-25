@@ -550,8 +550,9 @@ private struct LampRow: View {
 
                         ForEach(HSVColor.quickColors, id: \.self) { color in
                             Button {
-                                appState.previewColor(lamp, color: color)
-                                Task { await appState.commitColor(lamp, color: color) }
+                                let hsv = color.withValue(currentColorValue).vividSaturation()
+                                appState.previewColor(lamp, color: hsv)
+                                Task { await appState.commitColor(lamp, color: hsv) }
                             } label: {
                                 Circle()
                                     .fill(Color(hsv: color))
@@ -567,12 +568,11 @@ private struct LampRow: View {
                     ColorSpectrumPicker(color: Binding(
                         get: { lamp.color ?? .warm },
                         set: { newColor in
-                            let value = lamp.color?.v ?? HSVColor.defaultColorValue
-                            let hsv = newColor.withValue(value).vivid()
+                            let hsv = newColor.withValue(currentColorValue).vividSaturation()
                             appState.previewColor(lamp, color: hsv)
                         }
                     ), onCommit: { finalColor in
-                        let hsv = finalColor.vivid()
+                        let hsv = finalColor.withValue(currentColorValue).vividSaturation()
                         Task { await appState.commitColor(lamp, color: hsv) }
                     })
                     .frame(height: 62)
@@ -627,6 +627,20 @@ private struct LampRow: View {
 
     private func temperatureLabel(for capability: NumericCapability) -> String {
         "\(temperaturePercentage(for: capability))% blanc"
+    }
+
+    private var currentColorValue: Int {
+        if let colorValue = lamp.color?.v {
+            return min(1000, max(10, colorValue))
+        }
+
+        if let brightness = lamp.capabilities.brightness, let value = lamp.brightness {
+            let range = max(1, brightness.max - brightness.min)
+            let normalized = Double(value - brightness.min) / Double(range)
+            return min(1000, max(10, Int(round(normalized * 1000.0))))
+        }
+
+        return HSVColor.defaultColorValue
     }
 }
 

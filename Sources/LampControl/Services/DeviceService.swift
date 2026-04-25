@@ -109,7 +109,7 @@ final class DeviceService {
         if let workModeCode {
             commands.append(TuyaCommand(code: workModeCode, value: .string("colour")))
         }
-        commands.append(TuyaCommand(code: colorCode, value: .color(color.scaled(for: colorCode))))
+        commands.append(TuyaCommand(code: colorCode, value: .color(color.scaled(for: colorCode, valueScale: lamp.capabilities.colorValueScale))))
 
         try await sendCommandsWithModeFallback(deviceId: deviceId, commands: commands, workModeCode: workModeCode)
         return try update(deviceId: deviceId) {
@@ -143,7 +143,7 @@ final class DeviceService {
             power: switchCode.flatMap { status[$0]?.boolValue } ?? false,
             brightness: brightnessCode.flatMap { status[$0]?.intValue } ?? capabilities.brightness?.min,
             temperature: temperatureCode.flatMap { status[$0]?.intValue } ?? capabilities.temperature?.min,
-            color: colorCode.flatMap { status[$0]?.hsvValue?.normalized(from: $0) },
+            color: colorCode.flatMap { status[$0]?.hsvValue?.normalized(from: $0, valueScale: capabilities.colorValueScale) },
             workMode: status["work_mode"]?.stringValue,
             capabilities: capabilities
         )
@@ -217,8 +217,29 @@ final class DeviceService {
             brightness: parseNumeric(byCode["bright_value_v2"] ?? byCode["bright_value"]),
             temperature: parseNumeric(byCode["temp_value_v2"] ?? byCode["temp_value"]),
             colorCode: byCode["colour_data_v2"] == nil ? (byCode["colour_data"] == nil ? nil : "colour_data") : "colour_data_v2",
+            colorValueScale: parseColorValueScale(byCode["colour_data_v2"] ?? byCode["colour_data"]),
             workModeCode: byCode["work_mode"] == nil ? nil : "work_mode"
         )
+    }
+
+    private func parseColorValueScale(_ spec: TuyaFunctionSpec?) -> Int? {
+        guard let spec, let values = spec.values?.data(using: .utf8) else {
+            return nil
+        }
+
+        guard let json = try? JSONSerialization.jsonObject(with: values) as? [String: Any] else {
+            return nil
+        }
+
+        if let v = json["v"] as? [String: Any], let max = v["max"] as? Int {
+            return max <= 255 ? 255 : 1000
+        }
+
+        if let range = json["range"] as? [String], range.contains("hsv") {
+            return spec.code == "colour_data" ? nil : 1000
+        }
+
+        return spec.code == "colour_data_v2" ? 1000 : nil
     }
 
     private func parseNumeric(_ spec: TuyaFunctionSpec?) -> NumericCapability? {

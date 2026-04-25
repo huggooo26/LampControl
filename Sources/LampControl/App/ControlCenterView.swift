@@ -21,7 +21,6 @@ struct ControlCenterView: View {
         }
         .frame(width: appState.preferredPopoverSize.width, height: appState.preferredPopoverSize.height)
         .foregroundStyle(ink)
-        .preferredColorScheme(.light)
     }
 
     private var content: some View {
@@ -47,9 +46,9 @@ struct ControlCenterView: View {
         ZStack {
             LinearGradient(
                 colors: [
-                    Color(red: 0.965, green: 0.972, blue: 0.982),
-                    Color(red: 0.905, green: 0.918, blue: 0.938),
-                    Color(red: 0.984, green: 0.986, blue: 0.992)
+                    LCTheme.backgroundTop,
+                    LCTheme.backgroundMiddle,
+                    LCTheme.backgroundBottom
                 ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
@@ -57,9 +56,9 @@ struct ControlCenterView: View {
 
             LinearGradient(
                 colors: [
-                    Color.white.opacity(0.42),
+                    LCTheme.glassHighlight,
                     Color.clear,
-                    Color.black.opacity(0.045)
+                    LCTheme.backgroundShade
                 ],
                 startPoint: .top,
                 endPoint: .bottom
@@ -67,7 +66,7 @@ struct ControlCenterView: View {
 
             LinearGradient(
                 colors: [
-                    Color.white.opacity(0.28),
+                    LCTheme.sideHighlight,
                     Color.clear
                 ],
                 startPoint: .leading,
@@ -75,8 +74,7 @@ struct ControlCenterView: View {
             )
 
             Rectangle()
-                .fill(.ultraThinMaterial)
-                .opacity(0.42)
+                .fill(Color(nsColor: .windowBackgroundColor).opacity(0.18))
         }
         .ignoresSafeArea()
     }
@@ -168,44 +166,12 @@ struct ControlCenterView: View {
 extension View {
     @ViewBuilder
     func liquidGlassSurface(radius: CGFloat, tint: Color? = nil, interactive: Bool = false) -> some View {
-        if #available(macOS 26.0, *) {
-            if let tint {
-                if interactive {
-                    self.glassEffect(.regular.tint(tint).interactive(), in: .rect(cornerRadius: radius))
-                } else {
-                    self.glassEffect(.regular.tint(tint), in: .rect(cornerRadius: radius))
-                }
-            } else {
-                if interactive {
-                    self.glassEffect(.regular.interactive(), in: .rect(cornerRadius: radius))
-                } else {
-                    self.glassEffect(.regular, in: .rect(cornerRadius: radius))
-                }
-            }
-        } else {
-            self.fallbackGlassSurface(radius: radius, tint: tint)
-        }
+        self.fallbackGlassSurface(radius: radius, tint: tint)
     }
 
     @ViewBuilder
     func liquidGlassCircle(tint: Color? = nil, interactive: Bool = false) -> some View {
-        if #available(macOS 26.0, *) {
-            if let tint {
-                if interactive {
-                    self.glassEffect(.regular.tint(tint).interactive(), in: .circle)
-                } else {
-                    self.glassEffect(.regular.tint(tint), in: .circle)
-                }
-            } else {
-                if interactive {
-                    self.glassEffect(.regular.interactive(), in: .circle)
-                } else {
-                    self.glassEffect(.regular, in: .circle)
-                }
-            }
-        } else {
-            self.fallbackGlassSurface(radius: 999, tint: tint)
-        }
+        self.fallbackGlassSurface(radius: 999, tint: tint)
     }
 
     private func fallbackGlassSurface(radius: CGFloat, tint: Color?) -> some View {
@@ -213,52 +179,52 @@ extension View {
             .background(
                 LinearGradient(
                     colors: [
-                        Color.white.opacity(0.50),
-                        (tint ?? Color.white).opacity(0.20),
-                        Color.white.opacity(0.16)
+                        LCTheme.surfaceTop,
+                        (tint ?? LCTheme.surfaceMiddle).opacity(0.22),
+                        LCTheme.surfaceBottom
                     ],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 ),
                 in: RoundedRectangle(cornerRadius: radius, style: .continuous)
             )
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: radius, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: radius, style: .continuous)
                     .strokeBorder(
-                        LinearGradient(
-                            colors: [Color.white.opacity(0.78), Color.white.opacity(0.24), Color.black.opacity(0.05)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        ),
+                        LCTheme.strokeMiddle,
                         lineWidth: 0.8
                     )
             )
-            .shadow(color: Color.black.opacity(0.045), radius: 12, x: 0, y: 7)
     }
 
     @ViewBuilder
     func liquidGlassButtonStyle(prominent: Bool = false) -> some View {
-        if #available(macOS 26.0, *) {
-            if prominent {
-                self.buttonStyle(.glassProminent)
-            } else {
-                self.buttonStyle(.glass)
-            }
-        } else {
-            self
-                .buttonStyle(.plain)
-                .fallbackGlassSurface(
-                    radius: prominent ? 18 : 13,
-                    tint: prominent ? LCTheme.accent.opacity(0.35) : Color.white.opacity(0.08)
-                )
-        }
+        self
+            .buttonStyle(.plain)
+            .fallbackGlassSurface(
+                radius: prominent ? 18 : 13,
+                tint: prominent ? LCTheme.accent.opacity(0.35) : Color.white.opacity(0.08)
+            )
     }
 }
 
 enum LCTheme {
-    static let ink = Color(red: 0.08, green: 0.085, blue: 0.095)
-    static let muted = Color(red: 0.40, green: 0.41, blue: 0.44)
-    static let accent = Color(red: 0.24, green: 0.25, blue: 0.28)
-    static let softAccent = Color(red: 0.84, green: 0.85, blue: 0.88)
+    static let ink = Color.primary
+    static let muted = Color.secondary
+    static let accent = Color(nsColor: .controlAccentColor)
+    static let softAccent = Color(nsColor: .separatorColor)
+
+    static let backgroundTop = Color(nsColor: .windowBackgroundColor).opacity(0.96)
+    static let backgroundMiddle = Color(nsColor: .controlBackgroundColor).opacity(0.90)
+    static let backgroundBottom = Color(nsColor: .underPageBackgroundColor).opacity(0.92)
+    static let glassHighlight = Color(nsColor: .highlightColor).opacity(0.26)
+    static let sideHighlight = Color(nsColor: .highlightColor).opacity(0.18)
+    static let backgroundShade = Color.black.opacity(0.05)
+
+    static let surfaceTop = Color(nsColor: .controlBackgroundColor).opacity(0.72)
+    static let surfaceMiddle = Color(nsColor: .windowBackgroundColor)
+    static let surfaceBottom = Color(nsColor: .separatorColor).opacity(0.08)
+    static let strokeTop = Color(nsColor: .highlightColor).opacity(0.62)
+    static let strokeMiddle = Color(nsColor: .separatorColor).opacity(0.26)
+    static let strokeBottom = Color.black.opacity(0.06)
 }
