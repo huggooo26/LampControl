@@ -16,15 +16,18 @@ final class AppState: ObservableObject {
     @Published var isGroupPanelExpanded = false
     @Published var expandedLampIds = Set<String>()
     @Published var isOnboardingPresented = false
+    @Published var userScenes: [UserLightScene] = []
 
     @Published var updateService = UpdateService()
 
     private let settingsStore = SettingsStore()
+    private let sceneStore = LightSceneStore()
     private var deviceService: DeviceService?
     private var autoSyncTask: Task<Void, Never>?
     private let onboardingDismissedKey = "LampControl.onboarding.dismissed"
 
     init() {
+        loadScenes()
         Task {
             await loadSettings()
             await syncLamps(silent: true)
@@ -237,6 +240,7 @@ final class AppState: ObservableObject {
         }
 
         if lamps.contains(where: { $0.capabilities.colorCode != nil }) {
+            height += 8 + 64
             height += 8 + (isGroupPanelExpanded || selectedLampIds.count >= 2 ? 206 : 54)
         }
 
@@ -291,6 +295,70 @@ final class AppState: ObservableObject {
                 updateLamp(lamp)
             }
             message = "Couleur appliquée à \(updated.count) lampe(s)."
+        }
+    }
+
+    func applyScene(_ preset: LightScenePreset) async {
+        await applyScene(title: preset.title, color: preset.color)
+    }
+
+    func applyScene(_ scene: UserLightScene) async {
+        await applyScene(title: scene.title, color: scene.color)
+    }
+
+    func saveUserScene(id: UUID?, title: String, icon: String, color: HSVColor) {
+        let cleanTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !cleanTitle.isEmpty else {
+            message = "Nom de scène requis."
+            return
+        }
+
+        let cleanIcon = icon.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "paintpalette.fill" : icon.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let id, let index = userScenes.firstIndex(where: { $0.id == id }) {
+            userScenes[index].title = cleanTitle
+            userScenes[index].icon = cleanIcon
+            userScenes[index].color = color
+            message = "Scène \(cleanTitle) mise à jour."
+        } else {
+            userScenes.append(UserLightScene(title: cleanTitle, icon: cleanIcon, color: color))
+            message = "Scène \(cleanTitle) créée."
+        }
+
+        persistScenes()
+    }
+
+    func deleteUserScene(_ scene: UserLightScene) {
+        userScenes.removeAll { $0.id == scene.id }
+        persistScenes()
+        message = "Scène supprimée."
+    }
+
+    private func applyScene(title: String, color: HSVColor) async {
+        let selectedTargets = lamps.filter {
+            selectedLampIds.contains($0.id) && $0.online && $0.capabilities.colorCode != nil
+        }
+        let targets = selectedTargets.isEmpty
+            ? lamps.filter { $0.online && $0.capabilities.colorCode != nil }
+            : selectedTargets
+
+        guard !targets.isEmpty else {
+            message = "Aucune lampe RGB en ligne pour appliquer cette ambiance."
+            return
+        }
+
+        groupColor = color
+
+        await runBusy {
+            let service = try makeDeviceService()
+            var updated: [LampDevice] = []
+            for lamp in targets {
+                updated.append(try await service.setColor(deviceId: lamp.id, color: color))
+            }
+            for lamp in updated {
+                updateLamp(lamp)
+            }
+            let scope = selectedTargets.isEmpty ? "toutes les lampes RGB" : "\(updated.count) lampe(s)"
+            message = "Ambiance \(title) appliquée à \(scope)."
         }
     }
 
@@ -356,6 +424,22 @@ final class AppState: ObservableObject {
         }
 
         isOnboardingPresented = !UserDefaults.standard.bool(forKey: onboardingDismissedKey)
+    }
+
+    private func loadScenes() {
+        do {
+            userScenes = try sceneStore.load()
+        } catch {
+            message = "Scènes locales illisibles."
+        }
+    }
+
+    private func persistScenes() {
+        do {
+            try sceneStore.save(userScenes)
+        } catch {
+            message = error.localizedDescription
+        }
     }
 
     private func updateLamp(_ next: LampDevice) {

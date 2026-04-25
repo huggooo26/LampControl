@@ -11,6 +11,11 @@ All notable changes to LampControl are documented here. The format follows
 - Multi-vendor support (Philips Hue, LIFX, Yeelight, Govee).
 - Freemium licensing layer (free: ON/OFF + 2 lamps; lifetime: full features).
 
+### Added
+
+- Quick RGB scene presets can now apply Focus, Relax, Neon, or Night ambiance
+  to the selected lamps, or to every online RGB lamp when nothing is selected.
+
 ## [1.0.6] - 2026-04-25
 
 ### Added

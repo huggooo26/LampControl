@@ -29,6 +29,7 @@ struct LampsView: View {
             }
 
             if appState.lamps.contains(where: { $0.capabilities.colorCode != nil }) {
+                ScenePresetBar()
                 GroupControlEntry()
             }
 
@@ -150,6 +151,185 @@ struct LampsView: View {
         if appState.isAutoSyncing { return "Mise à jour..." }
         guard let lastSyncDate = appState.lastSyncDate else { return "Auto-sync 1 min" }
         return "Synchro \(lastSyncDate.formatted(date: .omitted, time: .shortened))"
+    }
+}
+
+private struct ScenePresetBar: View {
+    @EnvironmentObject private var appState: AppState
+    @State private var isEditingScene = false
+    @State private var editingSceneId: UUID?
+    @State private var draftTitle = ""
+    @State private var draftIcon = "paintpalette.fill"
+    @State private var draftColor = HSVColor.warm
+
+    var body: some View {
+        VStack(spacing: 8) {
+            ScrollView(.horizontal) {
+                HStack(spacing: 7) {
+                    ForEach(LightScenePreset.presets) { preset in
+                        sceneButton(title: preset.title, icon: preset.icon, color: preset.color) {
+                            Task { await appState.applyScene(preset) }
+                        }
+                    }
+
+                    ForEach(appState.userScenes) { scene in
+                        Menu {
+                            Button("Appliquer") {
+                                Task { await appState.applyScene(scene) }
+                            }
+                            Button("Modifier") {
+                                beginEditing(scene)
+                            }
+                            Divider()
+                            Button("Supprimer", role: .destructive) {
+                                appState.deleteUserScene(scene)
+                            }
+                        } label: {
+                            SceneChip(title: scene.title, icon: scene.icon, color: scene.color)
+                        }
+                        .menuStyle(.borderlessButton)
+                        .fixedSize()
+                        .disabled(appState.isBusy)
+                        .opacity(appState.isBusy ? 0.55 : 1)
+                    }
+
+                    Button {
+                        beginCreating()
+                    } label: {
+                        VStack(spacing: 4) {
+                            Image(systemName: "plus")
+                                .font(.system(size: 12, weight: .bold))
+                            Text("Créer")
+                                .font(.system(size: 10, weight: .semibold))
+                        }
+                        .foregroundStyle(LCTheme.accent)
+                        .frame(width: 62)
+                        .frame(height: 44)
+                        .liquidGlassSurface(radius: 15, tint: LCTheme.accent.opacity(0.10), interactive: true)
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.horizontal, 2)
+            }
+            .scrollIndicators(.hidden)
+
+            if isEditingScene {
+                sceneEditor
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+        }
+        .padding(10)
+        .liquidGlassSurface(radius: 18)
+        .animation(.spring(response: 0.28, dampingFraction: 0.88), value: isEditingScene)
+    }
+
+    private func sceneButton(title: String, icon: String, color: HSVColor, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            SceneChip(title: title, icon: icon, color: color)
+        }
+        .buttonStyle(.plain)
+        .disabled(appState.isBusy)
+        .opacity(appState.isBusy ? 0.55 : 1)
+        .help(appState.selectedLampIds.isEmpty ? "Appliquer à toutes les lampes RGB" : "Appliquer à la sélection RGB")
+    }
+
+    private var sceneEditor: some View {
+        VStack(spacing: 8) {
+            HStack(spacing: 8) {
+                TextField("Nom", text: $draftTitle)
+                    .textFieldStyle(.plain)
+                    .font(.system(size: 12, weight: .semibold))
+                    .padding(.horizontal, 10)
+                    .frame(height: 32)
+                    .liquidGlassSurface(radius: 12, tint: Color.white.opacity(0.06), interactive: true)
+
+                Picker("Icône", selection: $draftIcon) {
+                    ForEach(iconChoices, id: \.self) { icon in
+                        Image(systemName: icon).tag(icon)
+                    }
+                }
+                .labelsHidden()
+                .pickerStyle(.menu)
+                .frame(width: 48, height: 32)
+                .liquidGlassSurface(radius: 12, tint: Color.white.opacity(0.06), interactive: true)
+            }
+
+            HStack(spacing: 8) {
+                ColorSpectrumPicker(color: Binding(
+                    get: { draftColor },
+                    set: { draftColor = $0.withValue(draftColor.v).vividSaturation() }
+                ))
+                .frame(height: 50)
+
+                VStack(spacing: 6) {
+                    Button {
+                        appState.saveUserScene(id: editingSceneId, title: draftTitle, icon: draftIcon, color: draftColor)
+                        isEditingScene = false
+                    } label: {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundStyle(Color.white)
+                            .frame(width: 34, height: 24)
+                    }
+                    .liquidGlassButtonStyle(prominent: true)
+
+                    Button {
+                        isEditingScene = false
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundStyle(LCTheme.muted)
+                            .frame(width: 34, height: 24)
+                    }
+                    .liquidGlassButtonStyle()
+                }
+            }
+        }
+        .padding(10)
+        .liquidGlassSurface(radius: 16, tint: Color.white.opacity(0.05))
+    }
+
+    private var iconChoices: [String] {
+        ["paintpalette.fill", "sparkles", "moon.fill", "sun.max.fill", "flame.fill", "leaf.fill", "bed.double.fill"]
+    }
+
+    private func beginCreating() {
+        editingSceneId = nil
+        draftTitle = ""
+        draftIcon = "paintpalette.fill"
+        draftColor = appState.groupColor
+        isEditingScene = true
+    }
+
+    private func beginEditing(_ scene: UserLightScene) {
+        editingSceneId = scene.id
+        draftTitle = scene.title
+        draftIcon = scene.icon
+        draftColor = scene.color
+        isEditingScene = true
+    }
+}
+
+private struct SceneChip: View {
+    let title: String
+    let icon: String
+    let color: HSVColor
+
+    var body: some View {
+        VStack(spacing: 4) {
+            Image(systemName: icon)
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(Color(hsv: color))
+                .frame(height: 13)
+
+            Text(title)
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundStyle(LCTheme.ink)
+                .lineLimit(1)
+        }
+        .frame(width: 62)
+        .frame(height: 44)
+        .liquidGlassSurface(radius: 15, tint: Color(hsv: color).opacity(0.10), interactive: true)
     }
 }
 
