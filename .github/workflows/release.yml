@@ -141,13 +141,38 @@ jobs:
             echo "::error::SPARKLE_PRIVATE_KEY secret is required to sign the appcast."
             exit 1
           fi
+
           mkdir -p .sparkle-keys
-          echo "$SPARKLE_PRIVATE_KEY" > .sparkle-keys/private_key
+          # Use printf without trailing newline — Sparkle's sign_update reads
+          # the key file exactly and a trailing \n will turn the base64 EdDSA
+          # key into something it can't decode.
+          printf '%s' "$SPARKLE_PRIVATE_KEY" > .sparkle-keys/private_key
           chmod 600 .sparkle-keys/private_key
-          SIGN_OUTPUT=$(.sparkle-tools/bin/sign_update -f .sparkle-keys/private_key "${{ steps.stage.outputs.dmg }}")
-          echo "Sparkle signature line: $SIGN_OUTPUT"
-          echo "signature_line=$SIGN_OUTPUT" >> "$GITHUB_OUTPUT"
+
+          KEY_BYTES=$(wc -c < .sparkle-keys/private_key | tr -d ' ')
+          echo "private_key file is $KEY_BYTES bytes (expect ~64 base64 chars for an EdDSA key, no trailing newline)"
+          ls -la .sparkle-tools/bin/sign_update
+          .sparkle-tools/bin/sign_update --help 2>&1 | head -10 || true
+
+          # Capture both stdout + stderr + exit code so we can surface the real
+          # failure instead of dying silently under `set -e`.
+          set +e
+          SIGN_OUTPUT=$(.sparkle-tools/bin/sign_update -f .sparkle-keys/private_key "${{ steps.stage.outputs.dmg }}" 2>&1)
+          SIGN_EXIT=$?
+          set -e
+
+          echo "sign_update exit code: $SIGN_EXIT"
+          echo "sign_update output:"
+          echo "$SIGN_OUTPUT"
+
           rm -rf .sparkle-keys
+
+          if [ "$SIGN_EXIT" -ne 0 ]; then
+            echo "::error::sign_update failed (exit $SIGN_EXIT). See output above."
+            exit "$SIGN_EXIT"
+          fi
+
+          echo "signature_line=$SIGN_OUTPUT" >> "$GITHUB_OUTPUT"
 
       - name: Generate appcast.xml entry
         env:
