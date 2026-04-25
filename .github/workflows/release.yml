@@ -143,10 +143,13 @@ jobs:
           fi
 
           mkdir -p .sparkle-keys
-          # Use printf without trailing newline — Sparkle's sign_update reads
-          # the key file exactly and a trailing \n will turn the base64 EdDSA
-          # key into something it can't decode.
-          printf '%s' "$SPARKLE_PRIVATE_KEY" > .sparkle-keys/private_key
+          # GitHub textarea paste typically captures a trailing \n from the
+          # source file, which makes the base64 EdDSA key undecodable to
+          # sign_update (44 valid chars + 1 newline = 45 bytes, fails with
+          # "Failed to decode base64 encoded key data"). Strip every kind of
+          # whitespace (\n, \r, space, tab) before writing so the file is
+          # exactly the 44-char key, no matter how it was pasted.
+          printf '%s' "$SPARKLE_PRIVATE_KEY" | tr -d '\r\n\t ' > .sparkle-keys/private_key
           chmod 600 .sparkle-keys/private_key
 
           KEY_BYTES=$(wc -c < .sparkle-keys/private_key | tr -d ' ')
