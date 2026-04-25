@@ -6,10 +6,19 @@ All notable changes to LampControl are documented here. The format follows
 
 ## [Unreleased]
 
+### Planned
+
+- Multi-vendor support (Philips Hue, LIFX, Yeelight, Govee).
+- Freemium licensing layer (free: ON/OFF + 2 lamps; lifetime: full features).
+
+## [1.0.6] - 2026-04-25
+
 ### Added
 
 - Settings now use an Apple Settings-inspired menu/submenu layout with
   dedicated Tuya, devices, updates, and about panels.
+- First-run onboarding now guides new users through the Tuya setup flow with
+  direct actions for Settings and the configuration guide.
 
 ### Changed
 
@@ -26,12 +35,6 @@ All notable changes to LampControl are documented here. The format follows
   unexpectedly dimming compatible LED strips.
 - Tuya `colour_data` scaling now follows the device specification when
   available, avoiding 0...255 scaling on LED strips that expect 0...1000 HSV.
-
-### Planned
-
-- Multi-vendor support (Philips Hue, LIFX, Yeelight, Govee).
-- Freemium licensing layer (free: ON/OFF + 2 lamps; lifetime: full features).
-- Onboarding modal and refreshed settings layout.
 
 ## [1.0.5] - 2026-04-25
 
@@ -118,7 +121,8 @@ All notable changes to LampControl are documented here. The format follows
   configuration guides under `docs/`).
 - MIT licence and contributing guide.
 
-[Unreleased]: https://github.com/huggooo26/LampControl/compare/v1.0.5...HEAD
+[Unreleased]: https://github.com/huggooo26/LampControl/compare/v1.0.6...HEAD
+[1.0.6]: https://github.com/huggooo26/LampControl/compare/v1.0.5...v1.0.6
 [1.0.5]: https://github.com/huggooo26/LampControl/compare/v1.0.4...v1.0.5
 [1.0.4]: https://github.com/huggooo26/LampControl/compare/v1.0.3...v1.0.4
 [1.0.3]: https://github.com/huggooo26/LampControl/compare/v1.0.2...v1.0.3

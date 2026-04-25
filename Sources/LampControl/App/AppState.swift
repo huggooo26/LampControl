@@ -15,12 +15,14 @@ final class AppState: ObservableObject {
     @Published var isAutoSyncing = false
     @Published var isGroupPanelExpanded = false
     @Published var expandedLampIds = Set<String>()
+    @Published var isOnboardingPresented = false
 
     @Published var updateService = UpdateService()
 
     private let settingsStore = SettingsStore()
     private var deviceService: DeviceService?
     private var autoSyncTask: Task<Void, Never>?
+    private let onboardingDismissedKey = "LampControl.onboarding.dismissed"
 
     init() {
         Task {
@@ -46,6 +48,7 @@ final class AppState: ObservableObject {
             let loaded = try settingsStore.load()
             settings = loaded.settings
             hasSecret = loaded.hasSecret
+            presentOnboardingIfNeeded()
         } catch {
             message = error.localizedDescription
         }
@@ -315,6 +318,21 @@ final class AppState: ObservableObject {
         NSApplication.shared.terminate(nil)
     }
 
+    func openOnboardingSettings() {
+        isOnboardingPresented = false
+        selectedTab = .settings
+    }
+
+    func dismissOnboarding() {
+        UserDefaults.standard.set(true, forKey: onboardingDismissedKey)
+        isOnboardingPresented = false
+    }
+
+    func openConfigurationGuide() {
+        guard let url = URL(string: "https://github.com/huggooo26/LampControl/blob/main/docs/CONFIGURATION.fr.md") else { return }
+        NSWorkspace.shared.open(url)
+    }
+
     private func makeDeviceService() throws -> DeviceService {
         if let deviceService {
             return deviceService
@@ -329,6 +347,15 @@ final class AppState: ObservableObject {
         let service = DeviceService(client: client, uid: settings.uid)
         deviceService = service
         return service
+    }
+
+    private func presentOnboardingIfNeeded() {
+        guard !canSync else {
+            isOnboardingPresented = false
+            return
+        }
+
+        isOnboardingPresented = !UserDefaults.standard.bool(forKey: onboardingDismissedKey)
     }
 
     private func updateLamp(_ next: LampDevice) {

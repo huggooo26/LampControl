@@ -18,6 +18,12 @@ struct ControlCenterView: View {
             } else {
                 content
             }
+
+            if appState.isOnboardingPresented {
+                OnboardingOverlay()
+                    .transition(.opacity)
+                    .zIndex(10)
+            }
         }
         .frame(width: appState.preferredPopoverSize.width, height: appState.preferredPopoverSize.height)
         .foregroundStyle(ink)
@@ -161,6 +167,7 @@ struct ControlCenterView: View {
         .padding(.vertical, 9)
         .liquidGlassSurface(radius: 15, tint: Color.blue.opacity(0.08))
     }
+
 }
 
 extension View {
@@ -227,4 +234,5 @@ enum LCTheme {
     static let strokeTop = Color(nsColor: .highlightColor).opacity(0.62)
     static let strokeMiddle = Color(nsColor: .separatorColor).opacity(0.26)
     static let strokeBottom = Color.black.opacity(0.06)
+    static let overlayScrim = Color.black.opacity(0.28)
 }
