@@ -148,44 +148,36 @@ jobs:
           fi
 
           mkdir -p .sparkle-keys
-          # GitHub textarea paste typically captures a trailing \n from the
-          # source file, which makes the base64 EdDSA key undecodable to
-          # sign_update (44 valid chars + 1 newline = 45 bytes, fails with
-          # "Failed to decode base64 encoded key data"). Strip every kind of
-          # whitespace (\n, \r, space, tab) before writing so the file is
-          # exactly the 44-char key, no matter how it was pasted.
+          # Strip whitespace before writing — GitHub paste sometimes captures
+          # a trailing \n that breaks base64 decoding in sign_update.
           printf '%s' "$SPARKLE_PRIVATE_KEY" | tr -d '\r\n\t ' > .sparkle-keys/private_key
           chmod 600 .sparkle-keys/private_key
 
-          KEY_BYTES=$(wc -c < .sparkle-keys/private_key | tr -d ' ')
-          echo "private_key file is $KEY_BYTES bytes (expect ~64 base64 chars for an EdDSA key, no trailing newline)"
-          ls -la .sparkle-tools/bin/sign_update
-          .sparkle-tools/bin/sign_update --help 2>&1 | head -10 || true
-
-          # Capture both stdout + stderr + exit code so we can surface the real
-          # failure instead of dying silently under `set -e`.
+          # `-p` returns ONLY the EdDSA signature (no length= attribute),
+          # which lets us build the appcast <enclosure ... /> exactly once
+          # without duplicating the length attribute.
           set +e
-          SIGN_OUTPUT=$(.sparkle-tools/bin/sign_update -f .sparkle-keys/private_key "${{ steps.stage.outputs.dmg }}" 2>&1)
+          SIGNATURE=$(.sparkle-tools/bin/sign_update -p -f .sparkle-keys/private_key "${{ steps.stage.outputs.dmg }}" 2>&1)
           SIGN_EXIT=$?
           set -e
-
-          echo "sign_update exit code: $SIGN_EXIT"
-          echo "sign_update output:"
-          echo "$SIGN_OUTPUT"
 
           rm -rf .sparkle-keys
 
           if [ "$SIGN_EXIT" -ne 0 ]; then
-            echo "::error::sign_update failed (exit $SIGN_EXIT). See output above."
+            echo "::error::sign_update failed (exit $SIGN_EXIT)."
+            echo "$SIGNATURE"
             exit "$SIGN_EXIT"
           fi
 
-          echo "signature_line=$SIGN_OUTPUT" >> "$GITHUB_OUTPUT"
+          # Trim any stray whitespace from the signature itself.
+          SIGNATURE=$(printf '%s' "$SIGNATURE" | tr -d '\r\n\t ')
+          echo "EdDSA signature length: ${#SIGNATURE}"
+          echo "signature=$SIGNATURE" >> "$GITHUB_OUTPUT"
 
       - name: Generate appcast.xml entry
         env:
           MARKETING_VERSION: ${{ steps.version.outputs.marketing }}
-          SIGNATURE_LINE: ${{ steps.appcast.outputs.signature_line }}
+          SIGNATURE: ${{ steps.appcast.outputs.signature }}
           DMG_PATH: ${{ steps.stage.outputs.dmg }}
         run: |
           mkdir -p public
@@ -209,7 +201,7 @@ jobs:
                 <sparkle:shortVersionString>${MARKETING_VERSION}</sparkle:shortVersionString>
                 <sparkle:minimumSystemVersion>13.0</sparkle:minimumSystemVersion>
                 <description><![CDATA[See the <a href="https://github.com/${{ github.repository }}/releases/tag/v${MARKETING_VERSION}">release notes</a> on GitHub.]]></description>
-                <enclosure url="${DOWNLOAD_URL}" length="${DMG_LENGTH}" type="application/octet-stream" ${SIGNATURE_LINE} />
+                <enclosure url="${DOWNLOAD_URL}" length="${DMG_LENGTH}" type="application/octet-stream" sparkle:edSignature="${SIGNATURE}" />
               </item>
             </channel>
           </rss>
