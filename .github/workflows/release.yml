@@ -102,6 +102,7 @@ jobs:
       - name: Build, bundle and sign app
         env:
           VERSION: ${{ steps.version.outputs.marketing }}
+          BUILD_NUMBER: ${{ github.run_number }}
           SIGNING_IDENTITY: ${{ secrets.SIGNING_IDENTITY || '-' }}
         run: ./scripts/build_app.sh
 
@@ -127,6 +128,7 @@ jobs:
       - name: Build DMG
         env:
           VERSION: ${{ steps.version.outputs.marketing }}
+          BUILD_NUMBER: ${{ github.run_number }}
           SIGNING_IDENTITY: ${{ secrets.SIGNING_IDENTITY || '-' }}
         run: ./scripts/build_dmg.sh
 

@@ -12,6 +12,13 @@ All notable changes to LampControl are documented here. The format follows
 - Freemium licensing layer (free: ON/OFF + 2 lamps; lifetime: full features).
 - Onboarding modal and refreshed settings layout.
 
+## [1.0.4] - 2026-04-25
+
+### Fixed
+
+- Release builds now set `CFBundleVersion` to the same value advertised in
+  the appcast so Sparkle does not keep offering the same update.
+
 ## [1.0.3] - 2026-04-25
 
 ### Fixed
@@ -60,7 +67,8 @@ All notable changes to LampControl are documented here. The format follows
   configuration guides under `docs/`).
 - MIT licence and contributing guide.
 
-[Unreleased]: https://github.com/huggooo26/LampControl/compare/v1.0.3...HEAD
+[Unreleased]: https://github.com/huggooo26/LampControl/compare/v1.0.4...HEAD
+[1.0.4]: https://github.com/huggooo26/LampControl/compare/v1.0.3...v1.0.4
 [1.0.3]: https://github.com/huggooo26/LampControl/compare/v1.0.2...v1.0.3
 [1.0.2]: https://github.com/huggooo26/LampControl/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/huggooo26/LampControl/compare/v1.0.0...v1.0.1
