@@ -35,9 +35,21 @@ Philips Hue, LIFX, Yeelight and Govee is on the roadmap.
 1. Grab the latest DMG from the
    [Releases page](https://github.com/huggooo26/LampControl/releases/latest).
 2. Open `LampControl.dmg`, drag `LampControl.app` to `/Applications`.
-3. **First launch only:** right-click → *Open* (the app is signed ad-hoc until
-   we ship a notarised build — see [known limitations](#known-limitations)).
-4. The lightbulb icon appears in your menu bar.
+3. **First launch — bypass Gatekeeper** (the app is ad-hoc signed until we
+   enrol an Apple Developer ID; see [known limitations](#known-limitations)).
+   On macOS 14+ the right-click → Open trick no longer works on its own:
+   1. Double-click `LampControl.app` once. macOS shows
+      *"Apple could not verify «LampControl»…"*. Click **Done** —
+      **not** *Move to Trash*.
+   2. Open **System Settings → Privacy & Security**.
+   3. Scroll to the **Security** section at the bottom. You'll see:
+      *"«LampControl» was blocked to protect your Mac."* with an
+      **Open Anyway** button.
+   4. Click **Open Anyway** and authenticate (Touch ID or password).
+   5. A new dialog appears with an **Open** button — click it. The app
+      starts and macOS remembers your choice.
+4. The lightbulb icon appears in your menu bar. Updates delivered through
+   Sparkle do not re-trigger this prompt — only the very first install does.
 
 ### Option B — Build from source
 

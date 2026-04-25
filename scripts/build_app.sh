@@ -35,6 +35,18 @@ mkdir -p "$APP_DIR/Contents/Frameworks"
 cp "$BUILD_DIR/LampControl" "$APP_DIR/Contents/MacOS/LampControl"
 cp "$INFO_PLIST_SRC" "$INFO_PLIST_DST"
 
+# SwiftPM builds the executable with rpaths pointing into .build/release/
+# (so `swift run` works) but the resulting binary can't find embedded
+# frameworks like Sparkle when copied into a .app bundle. Strip every
+# existing LC_RPATH and add the canonical macOS app-bundle one so
+# @rpath/Sparkle.framework/... resolves to Contents/Frameworks/Sparkle...
+EXISTING_RPATHS=$(otool -l "$APP_DIR/Contents/MacOS/LampControl" \
+  | awk '/LC_RPATH/{rpath=1; next} rpath && /path /{print $2; rpath=0}')
+for rp in $EXISTING_RPATHS; do
+  install_name_tool -delete_rpath "$rp" "$APP_DIR/Contents/MacOS/LampControl" || true
+done
+install_name_tool -add_rpath "@executable_path/../Frameworks" "$APP_DIR/Contents/MacOS/LampControl"
+
 # Inject the resolved versions into the bundled Info.plist.
 /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $MARKETING_VERSION" "$INFO_PLIST_DST"
 /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BUILD_NUMBER_VALUE" "$INFO_PLIST_DST"

@@ -38,10 +38,24 @@ La Phase 1 supporte **Tuya / Smart Life**. Le support multi-fournisseurs
 1. Récupérez le dernier DMG sur la
    [page Releases](https://github.com/huggooo26/LampControl/releases/latest).
 2. Ouvrez `LampControl.dmg` et glissez `LampControl.app` dans `/Applications`.
-3. **Au premier lancement uniquement** : clic droit → *Ouvrir* (l'app est
-   signée en ad-hoc tant qu'on n'a pas fait notariser un build — voir
-   [limites connues](#limites-connues)).
-4. L'icône ampoule apparaît dans votre barre de menu.
+3. **Au premier lancement — contourner Gatekeeper** (l'app est signée en
+   ad-hoc tant qu'on n'a pas d'Apple Developer ID ; voir
+   [limites connues](#limites-connues)). Sur macOS 14+ le simple clic droit
+   → Ouvrir ne suffit plus :
+   1. Double-cliquez sur `LampControl.app` une première fois. macOS affiche
+      *« Apple n'a pas pu confirmer que LampControl ne contenait pas… »*.
+      Cliquez sur **Terminé** — **pas** *Placer dans la corbeille*.
+   2. Ouvrez **Réglages Système → Confidentialité et sécurité**.
+   3. Descendez tout en bas, dans la section **Sécurité**. Vous verrez :
+      *« LampControl a été bloquée pour protéger votre Mac. »* avec un
+      bouton **Ouvrir quand même**.
+   4. Cliquez sur **Ouvrir quand même** et authentifiez-vous (Touch ID
+      ou mot de passe).
+   5. Un nouveau dialog apparaît avec un bouton **Ouvrir** — cliquez
+      dessus. L'app se lance et macOS retient votre choix.
+4. L'icône ampoule apparaît dans votre barre de menu. Les mises à jour
+   livrées via Sparkle ne re-déclenchent pas ce dialog — seul le tout
+   premier lancement le fait.
 
 ### Option B — Compiler depuis les sources
 

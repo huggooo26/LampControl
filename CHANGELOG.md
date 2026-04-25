@@ -12,6 +12,16 @@ All notable changes to LampControl are documented here. The format follows
 - Freemium licensing layer (free: ON/OFF + 2 lamps; lifetime: full features).
 - Onboarding modal and refreshed settings layout.
 
+## [1.0.2] - 2026-04-25
+
+### Fixed
+
+- Bundle `LampControl.app` now embeds the correct `LC_RPATH` entry
+  (`@executable_path/../Frameworks`) so dyld can locate the bundled
+  `Sparkle.framework` at launch. Previous builds aborted with
+  `Library not loaded: @rpath/Sparkle.framework/...` because SwiftPM
+  rpaths point into the build directory and aren't relocatable.
+
 ## [1.0.1] - 2026-04-25
 
 ### Fixed
@@ -20,11 +30,6 @@ All notable changes to LampControl are documented here. The format follows
   The release workflow now uses `sign_update -p` to grab only the EdDSA
   signature and assembles the enclosure tag manually, so Sparkle clients
   receive a clean appcast item.
-
-### Verified end-to-end
-
-- This version is the first one delivered to running 1.0.0 instances via
-  Sparkle's auto-update flow.
 
 ## [1.0.0] - 2026-04-25
 
@@ -47,6 +52,7 @@ All notable changes to LampControl are documented here. The format follows
   configuration guides under `docs/`).
 - MIT licence and contributing guide.
 
-[Unreleased]: https://github.com/huggooo26/LampControl/compare/v1.0.1...HEAD
+[Unreleased]: https://github.com/huggooo26/LampControl/compare/v1.0.2...HEAD
+[1.0.2]: https://github.com/huggooo26/LampControl/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/huggooo26/LampControl/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/huggooo26/LampControl/releases/tag/v1.0.0
