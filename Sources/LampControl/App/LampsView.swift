@@ -173,24 +173,23 @@ private struct ScenePresetBar: View {
                     }
 
                     ForEach(appState.userScenes) { scene in
-                        Menu {
-                            Button("Appliquer") {
-                                Task { await appState.applyScene(scene) }
-                            }
-                            Button("Modifier") {
-                                beginEditing(scene)
-                            }
-                            Divider()
-                            Button("Supprimer", role: .destructive) {
-                                appState.deleteUserScene(scene)
-                            }
+                        Button {
+                            Task { await appState.applyScene(scene) }
                         } label: {
                             SceneChip(title: scene.title, icon: scene.icon, color: scene.color)
                         }
-                        .menuStyle(.borderlessButton)
-                        .fixedSize()
+                        .buttonStyle(.plain)
                         .disabled(appState.isBusy)
                         .opacity(appState.isBusy ? 0.55 : 1)
+                        .help(appState.selectedLampIds.isEmpty ? "Appliquer à toutes les lampes RGB" : "Appliquer à la sélection RGB")
+                        .contextMenu {
+                            Button("Modifier") {
+                                beginEditing(scene)
+                            }
+                            Button("Supprimer", role: .destructive) {
+                                appState.deleteUserScene(scene)
+                            }
+                        }
                     }
 
                     Button {

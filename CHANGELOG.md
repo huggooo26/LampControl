@@ -15,6 +15,8 @@ All notable changes to LampControl are documented here. The format follows
 
 - Quick RGB scene presets can now apply Focus, Relax, Neon, or Night ambiance
   to the selected lamps, or to every online RGB lamp when nothing is selected.
+- Custom RGB scenes can now be created, edited, deleted, persisted locally,
+  and applied with the same selected-or-all RGB targeting behavior.
 
 ## [1.0.6] - 2026-04-25
 
