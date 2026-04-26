@@ -104,6 +104,11 @@ jour intégrées.
 - Clic droit sur l'icône barre de menu pour accéder à **Check for Updates…**
   sans ouvrir le popover.
 
+## Premium
+
+La préparation de l'offre Premium et de l'activation Lemon Squeezy est
+documentée dans [docs/PREMIUM.fr.md](docs/PREMIUM.fr.md).
+
 ## Roadmap
 
 - **Phase 1 (actuelle)** : support Tuya, auto-update, doc bilingue, release

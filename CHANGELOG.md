@@ -11,12 +11,19 @@ All notable changes to LampControl are documented here. The format follows
 - Multi-vendor support (Philips Hue, LIFX, Yeelight, Govee).
 - Freemium licensing layer (free: ON/OFF + 2 lamps; lifetime: full features).
 
+## [1.0.7] - 2026-04-26
+
 ### Added
 
 - Quick RGB scene presets can now apply Focus, Relax, Neon, or Night ambiance
   to the selected lamps, or to every online RGB lamp when nothing is selected.
 - Custom RGB scenes can now be created, edited, deleted, persisted locally,
   and applied with the same selected-or-all RGB targeting behavior.
+- Added the first Premium/Early Access licensing foundation with local
+  entitlements, a Premium settings panel, and feature gates ready for server
+  validation.
+- Added the Lemon Squeezy activation flow with license activation, validation,
+  deactivation, and configurable product checks.
 
 ## [1.0.6] - 2026-04-25
 

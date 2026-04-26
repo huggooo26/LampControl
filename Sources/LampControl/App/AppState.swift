@@ -17,16 +17,20 @@ final class AppState: ObservableObject {
     @Published var expandedLampIds = Set<String>()
     @Published var isOnboardingPresented = false
     @Published var userScenes: [UserLightScene] = []
+    @Published var licenseState = LicenseState.earlyAccess
 
     @Published var updateService = UpdateService()
 
     private let settingsStore = SettingsStore()
     private let sceneStore = LightSceneStore()
+    private let licenseStore = LicenseStore()
+    private let licenseActivationService = LicenseActivationService()
     private var deviceService: DeviceService?
     private var autoSyncTask: Task<Void, Never>?
     private let onboardingDismissedKey = "LampControl.onboarding.dismissed"
 
     init() {
+        loadLicense()
         loadScenes()
         Task {
             await loadSettings()
@@ -44,6 +48,18 @@ final class AppState: ObservableObject {
         !settings.endpoint.isEmpty &&
         !settings.uid.isEmpty &&
         (hasSecret || !settings.accessSecret.isEmpty)
+    }
+
+    var visibleLamps: [LampDevice] {
+        guard let maxLamps = licenseState.entitlements.maxLamps else {
+            return lamps
+        }
+
+        return Array(lamps.prefix(maxLamps))
+    }
+
+    var hiddenLampCount: Int {
+        max(0, lamps.count - visibleLamps.count)
     }
 
     func loadSettings() async {
@@ -171,6 +187,11 @@ final class AppState: ObservableObject {
     }
 
     func toggleSelection(_ lamp: LampDevice) {
+        guard licenseState.entitlements.canUseGroups else {
+            message = "Les groupes sont inclus dans Premium."
+            return
+        }
+
         if selectedLampIds.contains(lamp.id) {
             selectedLampIds.remove(lamp.id)
         } else {
@@ -181,6 +202,11 @@ final class AppState: ObservableObject {
     }
 
     func selectAllRGBLamps() {
+        guard licenseState.entitlements.canUseGroups else {
+            message = "Les groupes sont inclus dans Premium."
+            return
+        }
+
         selectedLampIds = Set(lamps.filter { $0.online && $0.capabilities.colorCode != nil }.map(\.id))
         isGroupPanelExpanded = selectedLampIds.count >= 2
     }
@@ -244,15 +270,19 @@ final class AppState: ObservableObject {
             height += 8 + (isGroupPanelExpanded || selectedLampIds.count >= 2 ? 206 : 54)
         }
 
-        if !lamps.isEmpty {
+        if hiddenLampCount > 0 {
+            height += 8 + 46
+        }
+
+        if !visibleLamps.isEmpty {
             height += 8
         }
 
-        for lamp in lamps {
+        for lamp in visibleLamps {
             height += expandedLampIds.contains(lamp.id) ? expandedLampRowHeight(for: lamp) : 48
         }
 
-        height += CGFloat(max(0, lamps.count - 1)) * 8
+        height += CGFloat(max(0, visibleLamps.count - 1)) * 8
         height += 10
 
         return height
@@ -279,6 +309,11 @@ final class AppState: ObservableObject {
     }
 
     func applyGroupColor() async {
+        guard licenseState.entitlements.canUseGroups else {
+            message = "Les groupes sont inclus dans Premium."
+            return
+        }
+
         let targets = lamps.filter { selectedLampIds.contains($0.id) && $0.capabilities.colorCode != nil }
         guard !targets.isEmpty else {
             message = "Sélectionnez au moins une lampe RGB."
@@ -303,10 +338,20 @@ final class AppState: ObservableObject {
     }
 
     func applyScene(_ scene: UserLightScene) async {
+        guard licenseState.entitlements.canUseCustomScenes else {
+            message = "Les scènes personnalisées sont incluses dans Premium."
+            return
+        }
+
         await applyScene(title: scene.title, color: scene.color)
     }
 
     func saveUserScene(id: UUID?, title: String, icon: String, color: HSVColor) {
+        guard licenseState.entitlements.canUseCustomScenes else {
+            message = "Les scènes personnalisées sont incluses dans Premium."
+            return
+        }
+
         let cleanTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !cleanTitle.isEmpty else {
             message = "Nom de scène requis."
@@ -328,6 +373,11 @@ final class AppState: ObservableObject {
     }
 
     func deleteUserScene(_ scene: UserLightScene) {
+        guard licenseState.entitlements.canUseCustomScenes else {
+            message = "Les scènes personnalisées sont incluses dans Premium."
+            return
+        }
+
         userScenes.removeAll { $0.id == scene.id }
         persistScenes()
         message = "Scène supprimée."
@@ -363,6 +413,11 @@ final class AppState: ObservableObject {
     }
 
     func applyGroupPower(_ value: Bool) async {
+        guard licenseState.entitlements.canUseGroups else {
+            message = "Les groupes sont inclus dans Premium."
+            return
+        }
+
         let targets = lamps.filter { selectedLampIds.contains($0.id) }
         guard !targets.isEmpty else {
             message = "Sélectionnez au moins une lampe."
@@ -380,6 +435,45 @@ final class AppState: ObservableObject {
             }
             message = value ? "Groupe allumé." : "Groupe éteint."
         }
+    }
+
+    func activateLicense(_ licenseKey: String, email: String?) async {
+        await runBusy {
+            let next = try await licenseActivationService.activate(licenseKey: licenseKey, expectedEmail: email)
+            licenseState = next
+            try licenseStore.save(next)
+            message = "Licence Premium activée."
+        }
+    }
+
+    func validateLicense() async {
+        await runBusy {
+            let next = try await licenseActivationService.validate(licenseState)
+            licenseState = next
+            try licenseStore.save(next)
+            message = "Licence Premium validée."
+        }
+    }
+
+    func deactivateLicense() async {
+        await runBusy {
+            if licenseState.tier == .premium {
+                try await licenseActivationService.deactivate(licenseState)
+            }
+
+            licenseState = .earlyAccess
+            try licenseStore.save(licenseState)
+            message = "Licence désactivée. Early Access actif."
+        }
+    }
+
+    func openPremiumCheckout() {
+        guard let url = LicenseProviderConfig.checkoutURL else {
+            message = "Lien d'achat Premium à configurer."
+            return
+        }
+
+        NSWorkspace.shared.open(url)
     }
 
     func quit() {
@@ -431,6 +525,15 @@ final class AppState: ObservableObject {
             userScenes = try sceneStore.load()
         } catch {
             message = "Scènes locales illisibles."
+        }
+    }
+
+    private func loadLicense() {
+        do {
+            licenseState = try licenseStore.load()
+        } catch {
+            licenseState = .earlyAccess
+            message = "Licence locale illisible. Early Access actif."
         }
     }
 

@@ -33,9 +33,13 @@ struct LampsView: View {
                 GroupControlEntry()
             }
 
+            if appState.hiddenLampCount > 0 {
+                premiumLimitCard
+            }
+
             ScrollView {
                 LazyVStack(spacing: 8) {
-                    ForEach(appState.lamps) { lamp in
+                    ForEach(appState.visibleLamps) { lamp in
                         LampRow(lamp: lamp)
                     }
                 }
@@ -109,10 +113,29 @@ struct LampsView: View {
 
     private var overview: some View {
         HStack(spacing: 8) {
-            MetricPill(value: "\(appState.lamps.count)", label: "lampes", icon: "lightbulb.2")
-            MetricPill(value: "\(appState.lamps.filter(\.online).count)", label: "en ligne", icon: "wifi")
+            MetricPill(value: "\(appState.visibleLamps.count)", label: "lampes", icon: "lightbulb.2")
+            MetricPill(value: "\(appState.visibleLamps.filter(\.online).count)", label: "en ligne", icon: "wifi")
             MetricPill(value: "\(appState.selectedLampIds.count)", label: "groupe", icon: "checkmark.circle")
         }
+    }
+
+    private var premiumLimitCard: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "lock.fill")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(accent)
+                .frame(width: 28, height: 28)
+                .liquidGlassSurface(radius: 10, tint: Color.yellow.opacity(0.10))
+
+            Text("\(appState.hiddenLampCount) lampe(s) masquée(s) par l'offre gratuite")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(muted)
+
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 9)
+        .liquidGlassSurface(radius: 16, tint: Color.yellow.opacity(0.08))
     }
 
     private var syncBar: some View {

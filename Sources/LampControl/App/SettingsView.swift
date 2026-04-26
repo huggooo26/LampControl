@@ -34,6 +34,8 @@ struct SettingsView: View {
                         devicesSettings
                     case .updates:
                         updatesSettings
+                    case .premium:
+                        PremiumSettingsView(licenseState: appState.licenseState)
                     case .about:
                         aboutSettings
                     }
@@ -103,6 +105,14 @@ struct SettingsView: View {
                     title: "Mises à jour",
                     subtitle: "Version \(appState.updateService.currentVersion) (build \(appState.updateService.currentBuild))",
                     tint: Color.purple.opacity(0.10)
+                )
+
+                settingsLink(
+                    .premium,
+                    icon: "crown.fill",
+                    title: "Premium",
+                    subtitle: "\(appState.licenseState.tier.title) - \(appState.licenseState.statusText)",
+                    tint: Color.yellow.opacity(0.12)
                 )
 
                 settingsLink(
@@ -483,6 +493,7 @@ private enum SettingsRoute {
     case tuya
     case devices
     case updates
+    case premium
     case about
 
     var title: String {
@@ -491,6 +502,7 @@ private enum SettingsRoute {
         case .tuya: "Compte Tuya"
         case .devices: "Appareils"
         case .updates: "Mises à jour"
+        case .premium: "Premium"
         case .about: "À propos"
         }
     }
@@ -506,6 +518,8 @@ private enum SettingsRoute {
             "\(appState.lamps.count) lampe(s) synchronisée(s)"
         case .updates:
             "Sparkle auto-update"
+        case .premium:
+            appState.licenseState.statusText
         case .about:
             "Version et informations locales"
         }
