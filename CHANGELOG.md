@@ -6,6 +6,14 @@ All notable changes to LampControl are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- Started the multi-provider architecture with a generic light provider layer,
+  a Tuya provider adapter, and a provider settings overview ready for Philips
+  Hue, LIFX, Yeelight, and Govee.
+- Added the first Philips Hue integration with bridge discovery, local pairing,
+  secure keychain storage, lamp sync, and light controls.
+
 ### Planned
 
 - Multi-vendor support (Philips Hue, LIFX, Yeelight, Govee).

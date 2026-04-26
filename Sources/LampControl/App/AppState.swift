@@ -4,6 +4,8 @@ import Foundation
 @MainActor
 final class AppState: ObservableObject {
     @Published var settings = TuyaSettings()
+    @Published var hueSettings = HueSettings()
+    @Published var discoveredHueBridges: [HueBridge] = []
     @Published var lamps: [LampDevice] = []
     @Published var selectedTab: ControlTab = .lamps
     @Published var message = ""
@@ -22,10 +24,12 @@ final class AppState: ObservableObject {
     @Published var updateService = UpdateService()
 
     private let settingsStore = SettingsStore()
+    private let hueSettingsStore = HueSettingsStore()
+    private let hueClient = HueClient()
     private let sceneStore = LightSceneStore()
     private let licenseStore = LicenseStore()
     private let licenseActivationService = LicenseActivationService()
-    private var deviceService: DeviceService?
+    private var lightProviders: [LightProviderKind: any LightProvider] = [:]
     private var autoSyncTask: Task<Void, Never>?
     private let onboardingDismissedKey = "LampControl.onboarding.dismissed"
 
@@ -34,6 +38,7 @@ final class AppState: ObservableObject {
         loadScenes()
         Task {
             await loadSettings()
+            loadHueSettings()
             await syncLamps(silent: true)
             startAutoSync()
         }
@@ -44,6 +49,10 @@ final class AppState: ObservableObject {
     }
 
     var canSync: Bool {
+        canSyncTuya || hueSettings.isConfigured
+    }
+
+    var canSyncTuya: Bool {
         !settings.accessId.isEmpty &&
         !settings.endpoint.isEmpty &&
         !settings.uid.isEmpty &&
@@ -62,6 +71,13 @@ final class AppState: ObservableObject {
         max(0, lamps.count - visibleLamps.count)
     }
 
+    var configuredProviderKinds: [LightProviderKind] {
+        var providers: [LightProviderKind] = []
+        if canSyncTuya { providers.append(.tuya) }
+        if hueSettings.isConfigured { providers.append(.philipsHue) }
+        return providers
+    }
+
     func loadSettings() async {
         do {
             let loaded = try settingsStore.load()
@@ -78,7 +94,7 @@ final class AppState: ObservableObject {
             let saved = try settingsStore.save(settings)
             settings = saved.settings
             hasSecret = saved.hasSecret
-            deviceService = nil
+            lightProviders[.tuya] = nil
             message = "Réglages enregistrés."
             selectedTab = .lamps
         }
@@ -89,10 +105,9 @@ final class AppState: ObservableObject {
             let saved = try settingsStore.save(settings)
             settings = saved.settings
             hasSecret = saved.hasSecret
-            deviceService = nil
+            lightProviders[.tuya] = nil
 
-            let service = try makeDeviceService()
-            let synced = try await service.syncLamps()
+            let synced = try await syncConfiguredProviders()
             lamps = synced
             selectedLampIds = selectedLampIds.intersection(Set(synced.map(\.id)))
             expandedLampIds = expandedLampIds.intersection(Set(synced.map(\.id)))
@@ -111,8 +126,7 @@ final class AppState: ObservableObject {
             defer { isAutoSyncing = false }
 
             do {
-                let service = try makeDeviceService()
-                let synced = try await service.syncLamps()
+                let synced = try await syncConfiguredProviders()
                 lamps = synced
                 selectedLampIds = selectedLampIds.intersection(Set(synced.map(\.id)))
                 expandedLampIds = expandedLampIds.intersection(Set(synced.map(\.id)))
@@ -125,8 +139,7 @@ final class AppState: ObservableObject {
         }
 
         await runBusy {
-            let service = try makeDeviceService()
-            let synced = try await service.syncLamps()
+            let synced = try await syncConfiguredProviders()
             lamps = synced
             selectedLampIds = selectedLampIds.intersection(Set(synced.map(\.id)))
             expandedLampIds = expandedLampIds.intersection(Set(synced.map(\.id)))
@@ -139,7 +152,7 @@ final class AppState: ObservableObject {
         updateLamp(lamp.withPower(!lamp.power))
 
         do {
-            let updated = try await makeDeviceService().setPower(deviceId: lamp.id, value: !lamp.power)
+            let updated = try await makeLightProvider(for: lamp).setPower(deviceId: lamp.nativeID, value: !lamp.power)
             updateLamp(updated)
         } catch {
             updateLamp(lamp)
@@ -153,7 +166,7 @@ final class AppState: ObservableObject {
 
     func commitBrightness(_ lamp: LampDevice, value: Int) async {
         do {
-            let updated = try await makeDeviceService().setBrightness(deviceId: lamp.id, value: value)
+            let updated = try await makeLightProvider(for: lamp).setBrightness(deviceId: lamp.nativeID, value: value)
             updateLamp(updated)
         } catch {
             message = error.localizedDescription
@@ -166,7 +179,7 @@ final class AppState: ObservableObject {
 
     func commitTemperature(_ lamp: LampDevice, value: Int) async {
         do {
-            let updated = try await makeDeviceService().setTemperature(deviceId: lamp.id, value: value)
+            let updated = try await makeLightProvider(for: lamp).setTemperature(deviceId: lamp.nativeID, value: value)
             updateLamp(updated)
         } catch {
             message = error.localizedDescription
@@ -179,7 +192,7 @@ final class AppState: ObservableObject {
 
     func commitColor(_ lamp: LampDevice, color: HSVColor) async {
         do {
-            let updated = try await makeDeviceService().setColor(deviceId: lamp.id, color: color)
+            let updated = try await makeLightProvider(for: lamp).setColor(deviceId: lamp.nativeID, color: color)
             updateLamp(updated)
         } catch {
             message = error.localizedDescription
@@ -321,10 +334,9 @@ final class AppState: ObservableObject {
         }
 
         await runBusy {
-            let service = try makeDeviceService()
             var updated: [LampDevice] = []
             for lamp in targets {
-                updated.append(try await service.setColor(deviceId: lamp.id, color: groupColor))
+                updated.append(try await makeLightProvider(for: lamp).setColor(deviceId: lamp.nativeID, color: groupColor))
             }
             for lamp in updated {
                 updateLamp(lamp)
@@ -399,10 +411,9 @@ final class AppState: ObservableObject {
         groupColor = color
 
         await runBusy {
-            let service = try makeDeviceService()
             var updated: [LampDevice] = []
             for lamp in targets {
-                updated.append(try await service.setColor(deviceId: lamp.id, color: color))
+                updated.append(try await makeLightProvider(for: lamp).setColor(deviceId: lamp.nativeID, color: color))
             }
             for lamp in updated {
                 updateLamp(lamp)
@@ -425,10 +436,9 @@ final class AppState: ObservableObject {
         }
 
         await runBusy {
-            let service = try makeDeviceService()
             var updated: [LampDevice] = []
             for lamp in targets {
-                updated.append(try await service.setPower(deviceId: lamp.id, value: value))
+                updated.append(try await makeLightProvider(for: lamp).setPower(deviceId: lamp.nativeID, value: value))
             }
             for lamp in updated {
                 updateLamp(lamp)
@@ -476,6 +486,33 @@ final class AppState: ObservableObject {
         NSWorkspace.shared.open(url)
     }
 
+    func discoverHueBridges() async {
+        await runBusy {
+            discoveredHueBridges = try await hueClient.discoverBridges()
+            message = discoveredHueBridges.isEmpty ? "Aucun bridge Hue trouvé." : "\(discoveredHueBridges.count) bridge Hue détecté(s)."
+        }
+    }
+
+    func selectHueBridge(_ bridge: HueBridge) {
+        hueSettings.bridgeID = bridge.id
+        hueSettings.bridgeIP = bridge.internalipaddress
+        message = "Bridge Hue sélectionné. Appuyez sur son bouton, puis connectez."
+    }
+
+    func pairHueBridge() async {
+        await runBusy {
+            let bridgeIP = hueSettings.bridgeIP.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !bridgeIP.isEmpty else {
+                throw LampControlError.configuration("Sélectionnez ou renseignez un bridge Hue.")
+            }
+
+            hueSettings.username = try await hueClient.createUser(bridgeIP: bridgeIP)
+            hueSettings = try hueSettingsStore.save(hueSettings)
+            lightProviders[.philipsHue] = nil
+            message = "Bridge Philips Hue connecté."
+        }
+    }
+
     func quit() {
         NSApplication.shared.terminate(nil)
     }
@@ -495,20 +532,58 @@ final class AppState: ObservableObject {
         NSWorkspace.shared.open(url)
     }
 
-    private func makeDeviceService() throws -> DeviceService {
-        if let deviceService {
-            return deviceService
+    private func syncConfiguredProviders() async throws -> [LampDevice] {
+        let providers = try configuredProviderKinds.map { try makeLightProvider(for: $0) }
+        var synced: [LampDevice] = []
+        for provider in providers {
+            synced.append(contentsOf: try await provider.syncLights())
+        }
+        return synced.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+    }
+
+    private func makeLightProvider(for lamp: LampDevice) throws -> any LightProvider {
+        try makeLightProvider(for: lamp.providerID)
+    }
+
+    private func makeLightProvider(for kind: LightProviderKind) throws -> any LightProvider {
+        if let provider = lightProviders[kind] {
+            return provider
         }
 
+        let provider: any LightProvider
+        switch kind {
+        case .tuya:
+            provider = try makeTuyaProvider()
+        case .philipsHue:
+            guard hueSettings.isConfigured else {
+                throw LampControlError.configuration("Bridge Philips Hue non configuré.")
+            }
+            provider = HueLightProvider(settings: hueSettings)
+        case .lifx, .yeelight, .govee:
+            throw LampControlError.configuration("\(kind.title) arrive dans une prochaine version.")
+        }
+
+        lightProviders[kind] = provider
+        return provider
+    }
+
+    private func makeTuyaProvider() throws -> TuyaLightProvider {
         let secret = try settingsStore.accessSecret()
         guard !settings.accessId.isEmpty, !secret.isEmpty, !settings.endpoint.isEmpty, !settings.uid.isEmpty else {
             throw LampControlError.configuration("Identifiants Tuya incomplets. Ouvrez les réglages.")
         }
 
         let client = TuyaClient(accessId: settings.accessId, accessSecret: secret, endpoint: settings.endpoint)
-        let service = DeviceService(client: client, uid: settings.uid)
-        deviceService = service
+        let service = TuyaLightProvider(client: client, uid: settings.uid)
         return service
+    }
+
+    private func loadHueSettings() {
+        do {
+            hueSettings = try hueSettingsStore.load()
+        } catch {
+            message = "Réglages Hue illisibles."
+        }
     }
 
     private func presentOnboardingIfNeeded() {

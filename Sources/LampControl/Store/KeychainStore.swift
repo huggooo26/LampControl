@@ -2,11 +2,19 @@ import Foundation
 import Security
 
 final class KeychainStore {
-    private let service = "LampControl.Tuya"
-    private let account = "tuya-access-secret"
+    private let defaultService = "LampControl.Tuya"
+    private let defaultAccount = "tuya-access-secret"
 
     func readSecret() throws -> String {
-        var query = baseQuery()
+        try readSecret(service: defaultService, account: defaultAccount)
+    }
+
+    func saveSecret(_ secret: String) throws {
+        try saveSecret(secret, service: defaultService, account: defaultAccount)
+    }
+
+    func readSecret(service: String, account: String) throws -> String {
+        var query = baseQuery(service: service, account: account)
         query[kSecReturnData as String] = true
         query[kSecMatchLimit as String] = kSecMatchLimitOne
 
@@ -28,9 +36,9 @@ final class KeychainStore {
         return secret
     }
 
-    func saveSecret(_ secret: String) throws {
+    func saveSecret(_ secret: String, service: String, account: String) throws {
         let data = Data(secret.utf8)
-        var query = baseQuery()
+        var query = baseQuery(service: service, account: account)
         let attributes = [kSecValueData as String: data]
 
         let updateStatus = SecItemUpdate(query as CFDictionary, attributes as CFDictionary)
@@ -49,7 +57,7 @@ final class KeychainStore {
         }
     }
 
-    private func baseQuery() -> [String: Any] {
+    private func baseQuery(service: String, account: String) -> [String: Any] {
         [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,

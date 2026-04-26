@@ -2,6 +2,8 @@ import Foundation
 
 struct LampDevice: Identifiable, Codable, Equatable {
     let id: String
+    var providerID: LightProviderKind
+    var nativeID: String
     var name: String
     var online: Bool
     var power: Bool

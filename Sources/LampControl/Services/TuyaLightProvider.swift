@@ -1,16 +1,19 @@
 import Foundation
 
-final class DeviceService {
+final class TuyaLightProvider: LightProvider {
     private let client: TuyaClient
     private let uid: String
     private var lamps: [String: LampDevice] = [:]
+
+    let kind: LightProviderKind = .tuya
+    let displayName = LightProviderKind.tuya.title
 
     init(client: TuyaClient, uid: String) {
         self.client = client
         self.uid = uid
     }
 
-    func syncLamps() async throws -> [LampDevice] {
+    func syncLights() async throws -> [LampDevice] {
         guard !uid.isEmpty else {
             throw LampControlError.configuration("UID Tuya manquant. Renseignez-le dans les réglages.")
         }
@@ -137,7 +140,9 @@ final class DeviceService {
         let colorCode = capabilities.colorCode
 
         return LampDevice(
-            id: device.id,
+            id: "\(kind.rawValue):\(device.id)",
+            providerID: .tuya,
+            nativeID: device.id,
             name: device.name,
             online: device.online,
             power: switchCode.flatMap { status[$0]?.boolValue } ?? false,
