@@ -6,6 +6,35 @@ All notable changes to LampControl are documented here. The format follows
 
 ## [Unreleased]
 
+### Planned
+
+- Apple notarization and Developer ID signature.
+- HomeKit bridge and automation triggers.
+- Full English UI localization.
+
+## [1.0.8] - 2026-04-28
+
+### Added
+
+- LIFX Cloud provider with personal-token authentication, lamp sync, and full
+  power/brightness/temperature/color controls.
+- Govee Cloud provider with API key authentication, device state retrieval,
+  and full controls (HSV → RGB conversion handled client-side).
+- Yeelight LAN provider over JSON-RPC port 55443 using `Network.framework`,
+  with manual IP entry, per-bulb persistence, and graceful offline detection.
+- Dedicated provider settings pages for Govee and Yeelight (add/remove bulbs,
+  Keychain-stored API keys).
+- Bilingual configuration guide updated with end-to-end setup instructions
+  and troubleshooting for all five providers.
+
+### Changed
+
+- The provider overview now treats every brand as implemented; the "Bientôt"
+  placeholder is gone.
+- README and CONFIGURATION docs restructured around the five-provider matrix.
+
+## [1.0.7] - 2026-04-26
+
 ### Added
 
 - Started the multi-provider architecture with a generic light provider layer,
@@ -13,16 +42,6 @@ All notable changes to LampControl are documented here. The format follows
   Hue, LIFX, Yeelight, and Govee.
 - Added the first Philips Hue integration with bridge discovery, local pairing,
   secure keychain storage, lamp sync, and light controls.
-
-### Planned
-
-- Multi-vendor support (Philips Hue, LIFX, Yeelight, Govee).
-- Freemium licensing layer (free: ON/OFF + 2 lamps; lifetime: full features).
-
-## [1.0.7] - 2026-04-26
-
-### Added
-
 - Quick RGB scene presets can now apply Focus, Relax, Neon, or Night ambiance
   to the selected lamps, or to every online RGB lamp when nothing is selected.
 - Custom RGB scenes can now be created, edited, deleted, persisted locally,

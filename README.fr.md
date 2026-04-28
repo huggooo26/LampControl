@@ -1,7 +1,8 @@
 # LampControl
 
-> Une app macOS native dans la barre de menu pour piloter vos ampoules
-> connectées. Légère, en verre liquide, et sécurisée par le Keychain.
+> Une seule app de barre de menu pour piloter vos ampoules **Tuya / Smart
+> Life, Philips Hue, LIFX, Govee et Yeelight** depuis macOS. Native, légère,
+> en verre liquide, et sécurisée par le Keychain.
 >
 > 🇬🇧 [Read this README in English](README.md)
 
@@ -14,19 +15,31 @@ suffit pour allumer vos lampes, changer la luminosité, choisir une couleur ou
 appliquer une scène à un groupe — sans interrompre ce que vous êtes en train
 de faire.
 
-La Phase 1 supporte **Tuya / Smart Life**. Le support multi-fournisseurs
-(Philips Hue, LIFX, Yeelight, Govee) arrive en Phase 2.
+L'app gère **cinq écosystèmes en parallèle** :
+
+| Marque | Type d'accès | Internet ? |
+| --- | --- | --- |
+| Tuya / Smart Life | Cloud (Access ID + Secret + UID) | Oui |
+| Philips Hue | Bridge local (LAN) | Non |
+| LIFX | Cloud (token personnel) | Oui |
+| Govee | Cloud (clé API Developer) | Oui |
+| Yeelight | LAN direct (mode développeur) | Non |
+
+Activez-en autant que vous voulez — les lampes de tous les fournisseurs
+configurés apparaissent dans une seule liste triée.
 
 ---
 
 ## Fonctionnalités
 
 - 🪶 **App barre de menu légère** — pas d'icône Dock, pas d'Electron, ~5 Mo.
-- 💡 **Allumer, varier, recolorer** n'importe quelle lampe Tuya compatible.
+- 🌐 **Cinq fournisseurs dans une seule app** — Tuya, Hue, LIFX, Govee, Yeelight.
+- 💡 **Allumer, varier, recolorer** n'importe quelle ampoule compatible.
 - 🎨 **Scènes groupées** — sélectionnez plusieurs lampes RGB et appliquez une
   même couleur.
 - 🔁 **Synchro automatique** toutes les 60 secondes, en silence.
-- 🔐 **Access Secret stocké dans le Keychain** — aucun secret en clair.
+- 🔐 **Secrets stockés dans le Keychain** — tokens, clés API et clés bridge ne
+  touchent jamais un fichier en clair.
 - 🚀 **Auto-update via Sparkle** — un push sur `main`, les utilisateurs sont
   notifiés au prochain lancement.
 - 🆓 Open source, licence MIT.
@@ -71,24 +84,22 @@ Nécessite macOS 13+, les outils ligne de commande Xcode 15.4+, et Swift 5.9+.
 ## Démarrage rapide
 
 1. Cliquez sur l'ampoule dans votre barre de menu.
-2. Ouvrez l'onglet **Réglages**.
-3. Collez vos identifiants Tuya (voir le
-   [guide pas-à-pas](docs/CONFIGURATION.fr.md) — environ 5 minutes).
-4. Cliquez sur **Enregistrer**. Vos lampes apparaissent dans l'onglet
-   **Lampes**.
+2. Ouvrez **Réglages → Fournisseurs**.
+3. Choisissez les marques que vous possédez et suivez la section dédiée du
+   [guide de configuration](docs/CONFIGURATION.fr.md) :
+   - **Tuya** — Access ID + Secret + UID + région (~5 min).
+   - **Philips Hue** — détection auto du bridge, appui sur le bouton physique,
+     clic sur *Connecter*.
+   - **LIFX** — générez un token personnel sur
+     [cloud.lifx.com/settings](https://cloud.lifx.com/settings) et collez-le.
+   - **Govee** — demandez une clé API depuis l'app Govee Home (*À propos →
+     Apply for API Key*).
+   - **Yeelight** — activez *LAN Control* sur chaque ampoule dans l'app
+     Yeelight, puis ajoutez son IP.
+4. Les lampes apparaissent dans l'onglet **Lampes** dès qu'un fournisseur est
+   connecté.
 
-## Récupérer vos identifiants Tuya
-
-LampControl parle directement à l'API Tuya Cloud. Il vous faut :
-
-| Champ | Où le trouver |
-| --- | --- |
-| Access ID | Tuya IoT Platform → Cloud → Project → Authorization Key → *Access ID* |
-| Access Secret | Même écran → *Access Secret* |
-| Région | Choisissez la région la plus proche de vos lampes (Europe, US, Chine…) |
-| UID | Tuya IoT Platform → Cloud → Project → *Linked Devices* → *Link Tuya App Account* → copiez l'UID |
-
-Le tutoriel complet avec captures d'écran se trouve dans
+Le tutoriel bilingue complet se trouve dans
 [docs/CONFIGURATION.fr.md](docs/CONFIGURATION.fr.md) (français) et
 [docs/CONFIGURATION.md](docs/CONFIGURATION.md) (anglais).
 
@@ -111,23 +122,21 @@ documentée dans [docs/PREMIUM.fr.md](docs/PREMIUM.fr.md).
 
 ## Roadmap
 
-- **Phase 1 (actuelle)** : support Tuya, auto-update, doc bilingue, release
-  publique.
-- **Phase 2** : abstraction multi-fournisseurs + Philips Hue, LIFX, Yeelight,
-  Govee.
+- **Phase 1** : support Tuya, auto-update, doc bilingue, release publique. ✅
+- **Phase 2** : abstraction multi-fournisseurs + Philips Hue, LIFX, Govee,
+  Yeelight. ✅
 - **Phase 3** : modèle freemium — gratuit (ON/OFF, 2 lampes), licence à vie à
   10 € pour débloquer couleur, luminosité, multi-fournisseurs et lampes
   illimitées.
 - **Phase 4** : notarisation Apple, installation automatique au lancement,
   onboarding guidé.
+- **Phase 5** : localisation (UI anglaise), pont HomeKit, automatisations.
 
 ## Limites connues
 
 - 🔓 **Signature ad-hoc uniquement.** Tant qu'aucun Apple Developer ID payant
   n'est en place, Gatekeeper affiche un avertissement au premier lancement.
   Clic droit → *Ouvrir* une fois, macOS retient votre choix.
-- 🌍 **Tuya uniquement pour l'instant.** Les autres fournisseurs arrivent en
-  Phase 2 — voir la roadmap.
 - 🇫🇷 Les libellés in-app sont actuellement en français ; la localisation
   complète est en route.
 

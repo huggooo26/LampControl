@@ -18,7 +18,7 @@ enum LightProviderKind: String, Codable, CaseIterable, Hashable {
     }
 
     var isImplemented: Bool {
-        self == .tuya || self == .philipsHue
+        true
     }
 }
 

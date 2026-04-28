@@ -1,7 +1,8 @@
 # LampControl
 
-> A native macOS menu-bar app to control your smart lamps. Lightweight,
-> liquid-glass styled, and keychain-secure.
+> One menu-bar app to drive **Tuya / Smart Life, Philips Hue, LIFX, Govee
+> and Yeelight** lamps from macOS. Native, lightweight, liquid-glass styled,
+> Keychain-secure.
 >
 > 🇫🇷 [Lire ce README en français](README.fr.md)
 
@@ -13,18 +14,29 @@ LampControl lives in your macOS menu bar. Click the lightbulb icon to toggle
 your lamps, change brightness, pick a colour, or apply a group scene without
 leaving whatever you're doing.
 
-Phase 1 ships with **Tuya / Smart Life** support. Multi-vendor support for
-Philips Hue, LIFX, Yeelight and Govee is on the roadmap.
+It speaks to **five ecosystems in parallel**:
+
+| Brand | Access | Internet? |
+| --- | --- | --- |
+| Tuya / Smart Life | Cloud (Access ID + Secret + UID) | Yes |
+| Philips Hue | Local bridge (LAN) | No |
+| LIFX | Cloud (personal token) | Yes |
+| Govee | Cloud (Developer API key) | Yes |
+| Yeelight | Direct LAN (developer mode) | No |
+
+Configure as many or as few as you like — lamps from every connected
+provider show up in a single sorted list.
 
 ---
 
 ## Features
 
 - 🪶 **Lightweight menu-bar app** — no dock icon, no Electron, ~5 MB.
-- 💡 **Toggle, dim and recolour** any compatible Tuya lamp.
+- 🌐 **Five providers in one app** — Tuya, Hue, LIFX, Govee, Yeelight.
+- 💡 **Toggle, dim and recolour** any compatible bulb.
 - 🎨 **Group scenes** — select multiple RGB lamps and apply one colour.
 - 🔁 **Auto-sync** every 60 seconds, silently in the background.
-- 🔐 **Keychain-stored Access Secret** — credentials never touch a plain text file.
+- 🔐 **Keychain-stored secrets** — tokens, API keys and bridge keys never touch plain text files.
 - 🚀 **Auto-update via Sparkle** — push to `main`, users get notified next launch.
 - 🆓 Open source under the MIT licence.
 
@@ -65,23 +77,21 @@ Requires macOS 13+, Xcode 15.4+ command-line tools, and Swift 5.9+.
 ## Quick start
 
 1. Click the lightbulb in your menu bar.
-2. Open the **Réglages / Settings** tab.
-3. Paste your Tuya credentials (see the
-   [step-by-step guide](docs/CONFIGURATION.md) — it takes ~5 minutes).
-4. Click **Enregistrer**. Your lamps appear in the **Lampes** tab.
+2. Open **Settings → Providers**.
+3. Pick the brands you own and follow the dedicated section in the
+   [configuration guide](docs/CONFIGURATION.md):
+   - **Tuya** — Access ID + Secret + UID + region (~5 min).
+   - **Philips Hue** — auto-discover the bridge, press its physical button,
+     click *Connect*.
+   - **LIFX** — generate a personal token at
+     [cloud.lifx.com/settings](https://cloud.lifx.com/settings) and paste it.
+   - **Govee** — request an API key from the Govee Home app (*About → Apply
+     for API Key*).
+   - **Yeelight** — enable *LAN Control* on each bulb in the Yeelight app,
+     then add its IP.
+4. Lamps appear in the **Lamps** tab as soon as a provider is connected.
 
-## Get your Tuya credentials
-
-LampControl talks directly to the Tuya Cloud API. You need:
-
-| Field | Where to find it |
-| --- | --- |
-| Access ID | Tuya IoT Platform → Cloud → Project → Authorization Key → *Access ID* |
-| Access Secret | Same screen → *Access Secret* |
-| Region | Pick the region closest to your lamps (Europe, US, China…) |
-| UID | Tuya IoT Platform → Cloud → Project → *Linked Devices* → *Link Tuya App Account* → copy the UID |
-
-The full walkthrough lives in
+The full bilingual walkthrough lives in
 [docs/CONFIGURATION.md](docs/CONFIGURATION.md) (English) and
 [docs/CONFIGURATION.fr.md](docs/CONFIGURATION.fr.md) (French).
 
@@ -98,18 +108,18 @@ LampControl uses [Sparkle](https://sparkle-project.org/) for in-app updates.
 
 ## Roadmap
 
-- **Phase 1 (now):** Tuya support, auto-update, bilingual docs, public release.
-- **Phase 2:** Vendor abstraction + Philips Hue, LIFX, Yeelight, Govee.
+- **Phase 1:** Tuya support, auto-update, bilingual docs, public release. ✅
+- **Phase 2:** Vendor abstraction + Philips Hue, LIFX, Govee, Yeelight. ✅
 - **Phase 3:** Freemium licensing — free tier (ON/OFF, 2 lamps), lifetime
   €10 unlock for colour, brightness, multi-vendor and unlimited lamps.
 - **Phase 4:** Notarisation, automatic install on launch, onboarding tour.
+- **Phase 5:** Localisation (English UI), HomeKit bridge, automation triggers.
 
 ## Known limitations
 
 - 🔓 **Ad-hoc signature only.** Until a paid Apple Developer ID is enrolled,
   Gatekeeper will warn on first launch. Right-click → *Open* once and macOS
   remembers your choice.
-- 🌍 **Tuya only for now.** Other vendors land in Phase 2 — see roadmap.
 - 🇫🇷 The in-app UI labels are currently in French; full localisation is on
   the way.
 

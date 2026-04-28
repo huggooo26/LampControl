@@ -5,6 +5,9 @@ import Foundation
 final class AppState: ObservableObject {
     @Published var settings = TuyaSettings()
     @Published var hueSettings = HueSettings()
+    @Published var lifxSettings = LifxSettings()
+    @Published var goveeSettings = GoveeSettings()
+    @Published var yeelightSettings = YeelightSettings()
     @Published var discoveredHueBridges: [HueBridge] = []
     @Published var lamps: [LampDevice] = []
     @Published var selectedTab: ControlTab = .lamps
@@ -25,6 +28,9 @@ final class AppState: ObservableObject {
 
     private let settingsStore = SettingsStore()
     private let hueSettingsStore = HueSettingsStore()
+    private let lifxSettingsStore = LifxSettingsStore()
+    private let goveeSettingsStore = GoveeSettingsStore()
+    private let yeelightSettingsStore = YeelightSettingsStore()
     private let hueClient = HueClient()
     private let sceneStore = LightSceneStore()
     private let licenseStore = LicenseStore()
@@ -39,6 +45,9 @@ final class AppState: ObservableObject {
         Task {
             await loadSettings()
             loadHueSettings()
+            loadLifxSettings()
+            loadGoveeSettings()
+            loadYeelightSettings()
             await syncLamps(silent: true)
             startAutoSync()
         }
@@ -49,7 +58,7 @@ final class AppState: ObservableObject {
     }
 
     var canSync: Bool {
-        canSyncTuya || hueSettings.isConfigured
+        canSyncTuya || hueSettings.isConfigured || lifxSettings.isConfigured || goveeSettings.isConfigured || yeelightSettings.isConfigured
     }
 
     var canSyncTuya: Bool {
@@ -75,6 +84,9 @@ final class AppState: ObservableObject {
         var providers: [LightProviderKind] = []
         if canSyncTuya { providers.append(.tuya) }
         if hueSettings.isConfigured { providers.append(.philipsHue) }
+        if lifxSettings.isConfigured { providers.append(.lifx) }
+        if goveeSettings.isConfigured { providers.append(.govee) }
+        if yeelightSettings.isConfigured { providers.append(.yeelight) }
         return providers
     }
 
@@ -87,6 +99,83 @@ final class AppState: ObservableObject {
         } catch {
             message = error.localizedDescription
         }
+    }
+
+    func saveLifxSettingsAndSync() async {
+        await runBusy {
+            lifxSettings = try lifxSettingsStore.save(lifxSettings)
+            lightProviders[.lifx] = nil
+            let synced = try await syncConfiguredProviders()
+            lamps = synced
+            selectedLampIds = selectedLampIds.intersection(Set(synced.map(\.id)))
+            expandedLampIds = expandedLampIds.intersection(Set(synced.map(\.id)))
+            lastSyncDate = Date()
+            message = "LIFX connecté. \(synced.count) lampe(s) synchronisée(s)."
+            selectedTab = .lamps
+        }
+    }
+
+    func saveGoveeSettingsAndSync() async {
+        await runBusy {
+            goveeSettings = try goveeSettingsStore.save(goveeSettings)
+            lightProviders[.govee] = nil
+            let synced = try await syncConfiguredProviders()
+            lamps = synced
+            selectedLampIds = selectedLampIds.intersection(Set(synced.map(\.id)))
+            expandedLampIds = expandedLampIds.intersection(Set(synced.map(\.id)))
+            lastSyncDate = Date()
+            message = "Govee connecté. \(synced.count) lampe(s) synchronisée(s)."
+            selectedTab = .lamps
+        }
+    }
+
+    func addYeelightBulb(host: String, name: String) async {
+        let cleanHost = host.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !cleanHost.isEmpty else {
+            message = "Adresse IP Yeelight requise."
+            return
+        }
+
+        var (hostOnly, port) = parseYeelightHost(cleanHost)
+        if hostOnly.isEmpty { hostOnly = cleanHost; port = 55443 }
+
+        var next = yeelightSettings
+        let bulb = YeelightBulb(host: hostOnly, port: port, name: name.trimmingCharacters(in: .whitespacesAndNewlines))
+        next.bulbs.append(bulb)
+
+        await runBusy {
+            yeelightSettings = try yeelightSettingsStore.save(next)
+            lightProviders[.yeelight] = nil
+            let synced = try await syncConfiguredProviders()
+            lamps = synced
+            selectedLampIds = selectedLampIds.intersection(Set(synced.map(\.id)))
+            expandedLampIds = expandedLampIds.intersection(Set(synced.map(\.id)))
+            lastSyncDate = Date()
+            message = "Yeelight ajoutée. \(synced.count) lampe(s) synchronisée(s)."
+        }
+    }
+
+    func removeYeelightBulb(_ bulb: YeelightBulb) async {
+        var next = yeelightSettings
+        next.bulbs.removeAll { $0.id == bulb.id }
+
+        await runBusy {
+            yeelightSettings = try yeelightSettingsStore.save(next)
+            lightProviders[.yeelight] = nil
+            let synced = try await syncConfiguredProviders()
+            lamps = synced
+            selectedLampIds = selectedLampIds.intersection(Set(synced.map(\.id)))
+            expandedLampIds = expandedLampIds.intersection(Set(synced.map(\.id)))
+            lastSyncDate = Date()
+            message = "Yeelight retirée."
+        }
+    }
+
+    private func parseYeelightHost(_ raw: String) -> (host: String, port: Int) {
+        if let colon = raw.lastIndex(of: ":"), let port = Int(raw[raw.index(after: colon)...]) {
+            return (String(raw[..<colon]), port)
+        }
+        return (raw, 55443)
     }
 
     func saveSettings() async {
@@ -559,8 +648,21 @@ final class AppState: ObservableObject {
                 throw LampControlError.configuration("Bridge Philips Hue non configuré.")
             }
             provider = HueLightProvider(settings: hueSettings)
-        case .lifx, .yeelight, .govee:
-            throw LampControlError.configuration("\(kind.title) arrive dans une prochaine version.")
+        case .lifx:
+            guard lifxSettings.isConfigured else {
+                throw LampControlError.configuration("Token LIFX manquant.")
+            }
+            provider = LifxLightProvider(settings: lifxSettings)
+        case .govee:
+            guard goveeSettings.isConfigured else {
+                throw LampControlError.configuration("Clé API Govee manquante.")
+            }
+            provider = GoveeLightProvider(settings: goveeSettings)
+        case .yeelight:
+            guard yeelightSettings.isConfigured else {
+                throw LampControlError.configuration("Aucune lampe Yeelight enregistrée.")
+            }
+            provider = YeelightLightProvider(settings: yeelightSettings)
         }
 
         lightProviders[kind] = provider
@@ -583,6 +685,30 @@ final class AppState: ObservableObject {
             hueSettings = try hueSettingsStore.load()
         } catch {
             message = "Réglages Hue illisibles."
+        }
+    }
+
+    private func loadLifxSettings() {
+        do {
+            lifxSettings = try lifxSettingsStore.load()
+        } catch {
+            message = "Réglages LIFX illisibles."
+        }
+    }
+
+    private func loadGoveeSettings() {
+        do {
+            goveeSettings = try goveeSettingsStore.load()
+        } catch {
+            message = "Réglages Govee illisibles."
+        }
+    }
+
+    private func loadYeelightSettings() {
+        do {
+            yeelightSettings = try yeelightSettingsStore.load()
+        } catch {
+            message = "Réglages Yeelight illisibles."
         }
     }
 

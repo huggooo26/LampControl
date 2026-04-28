@@ -1,6 +1,30 @@
-# Guide de configuration — Tuya / Smart Life
+# Guide de configuration — Tuya, Hue, LIFX, Govee, Yeelight
 
 > 🇬🇧 [Read this guide in English](CONFIGURATION.md)
+
+LampControl gère cinq écosystèmes en parallèle. Vous pouvez en activer un seul
+ou les cinq — la liste de lampes est fusionnée et triée par nom.
+
+| Marque | Type d'accès | Internet requis ? |
+| --- | --- | --- |
+| **Tuya / Smart Life** | Cloud (Access ID + Secret + UID) | Oui |
+| **Philips Hue** | Bridge local (LAN) | Non (LAN) |
+| **LIFX** | Cloud (token personnel) | Oui |
+| **Govee** | Cloud (clé API Developer) | Oui |
+| **Yeelight** | LAN direct (mode développeur) | Non (LAN) |
+
+Chaque marque a sa propre section de réglages dans **Réglages → Fournisseurs**.
+Sautez directement à la section correspondante :
+
+- [Tuya](#tuya--smart-life)
+- [Philips Hue](#philips-hue)
+- [LIFX](#lifx)
+- [Govee](#govee)
+- [Yeelight](#yeelight)
+
+---
+
+## Tuya / Smart Life
 
 LampControl a besoin de quatre informations pour communiquer avec le cloud
 Tuya :
@@ -183,8 +207,8 @@ lampe que le cloud ne joint pas.
 
 **LampControl fonctionne-t-il sans internet ?**
 
-Pas en Phase 1 — Tuya est une API cloud uniquement. La Phase 2 ajoutera Hue
-et Yeelight, qui marchent en LAN local.
+Oui, partiellement : Hue et Yeelight fonctionnent entièrement en LAN local.
+Tuya, LIFX et Govee passent par leur cloud respectif.
 
 **Où est stocké mon Access Secret ?**
 
@@ -208,3 +232,157 @@ périmètre.
 [GitHub Issues](https://github.com/huggooo26/LampControl/issues) — merci
 d'indiquer la version macOS, la version LampControl, et le modèle de la
 lampe.
+
+---
+
+## Philips Hue
+
+LampControl parle directement à votre **bridge Hue** sur le réseau local —
+aucune dépendance au cloud Hue.
+
+### Étape 1 — Repérer le bridge
+
+1. Branchez le bridge Hue sur votre box internet (câble Ethernet) et
+   alimentez-le. La diode du milieu doit être allumée.
+2. Vérifiez qu'il est sur le **même réseau Wi-Fi** que votre Mac.
+3. Dans LampControl, ouvrez **Réglages → Fournisseurs → Philips Hue → Détecter
+   les bridges**. LampControl interroge `discovery.meethue.com` et liste les
+   bridges visibles. Sélectionnez le vôtre.
+
+> Si la détection ne renvoie rien, saisissez l'IP manuellement (visible dans
+> l'app Hue → Réglages → Mes appareils Hue → Bridge → Informations réseau).
+
+### Étape 2 — Appairer LampControl
+
+1. **Appuyez physiquement sur le gros bouton rond** au centre du bridge Hue.
+2. Dans les 30 secondes, cliquez sur **Connecter Hue** dans LampControl.
+3. Une clé d'application est générée et stockée dans le Keychain macOS sous le
+   service `LampControl.Hue`.
+
+Vos lampes Hue apparaissent dans l'onglet **Lampes**, avec couleur et
+température compatible avec leurs capacités matérielles.
+
+### Dépannage Hue
+
+- **« Bridge Philips Hue non configuré »** — appuyez bien sur le bouton du
+  bridge **avant** de cliquer sur Connecter. Recommencez.
+- **Aucune lampe détectée** — ouvrez l'app Hue officielle, vérifiez que les
+  ampoules apparaissent. Si non, ré-appairez-les dans l'app Hue d'abord.
+- **Bridge introuvable sur le LAN** — débranchez/rebranchez le bridge,
+  attendez la diode au milieu allumée fixe, et relancez la détection.
+
+---
+
+## LIFX
+
+LIFX expose une API cloud officielle. Il vous faut un **token personnel**.
+
+### Étape 1 — Générer un token
+
+1. Connectez-vous sur <https://cloud.lifx.com/sign_in>.
+2. Allez dans **Settings → Personal Access Tokens** (ou directement
+   <https://cloud.lifx.com/settings>).
+3. Cliquez sur **Generate New Token**, donnez-lui un nom (ex. `LampControl`).
+4. Copiez le token affiché — il ne sera plus jamais montré en clair.
+
+### Étape 2 — Saisir dans LampControl
+
+1. **Réglages → Fournisseurs → LIFX**.
+2. Collez le token dans **Token LIFX**.
+3. **Enregistrer et synchroniser**.
+
+Le token est stocké dans le Keychain macOS sous le service `LampControl.LIFX`.
+Les lampes apparaissent dans l'onglet **Lampes**.
+
+### Dépannage LIFX
+
+- **HTTP 401 / token invalide** — le token a été révoqué ou mal copié.
+  Régénérez-en un.
+- **Aucune lampe** — vérifiez que vos ampoules sont bien synchronisées avec
+  l'app LIFX officielle (donc visibles dans le cloud LIFX).
+- **HTTP 429 (rate limit)** — l'API LIFX limite à ~120 requêtes/minute par
+  token. LampControl rafraîchit toutes les minutes ; si vous spammez les
+  contrôles, attendez 30 secondes.
+
+---
+
+## Govee
+
+Govee fournit une API HTTP officielle accessible via une **clé API**
+demandée depuis l'app mobile.
+
+### Étape 1 — Demander une clé API
+
+1. Ouvrez l'app **Govee Home** sur iOS ou Android.
+2. Allez dans **Mon profil (icône en bas à droite) → menu hamburger ☰ → À
+   propos / About Us → Apply for API Key**.
+3. Renseignez votre nom et un motif (« macOS menu bar app » suffit).
+4. Vous recevez la clé par email sous quelques minutes (parfois quelques
+   heures).
+
+### Étape 2 — Saisir dans LampControl
+
+1. **Réglages → Fournisseurs → Govee**.
+2. Collez la **clé API** reçue par email.
+3. **Enregistrer et synchroniser**.
+
+La clé est stockée dans le Keychain macOS sous le service `LampControl.Govee`.
+
+### Dépannage Govee
+
+- **HTTP 401 / 403** — la clé API n'est pas active ou a été révoquée. Refaites
+  la demande dans l'app Govee Home.
+- **HTTP 429** — la limite Govee est de **60 requêtes/minute** par clé.
+  Espacez les actions ou attendez la prochaine synchronisation auto.
+- **Lampe absente** — Govee n'expose qu'une partie de son catalogue via l'API
+  publique. Si l'app Govee Home la pilote mais pas LampControl, c'est que le
+  modèle n'est pas dans la whitelist Govee Developer (ouvrez une issue avec
+  le numéro de modèle, mais le contournement est côté Govee).
+
+---
+
+## Yeelight
+
+Yeelight (Xiaomi) expose un protocole **JSON-RPC en LAN** sur le port 55443.
+Aucun cloud, aucun token — mais il faut activer **« LAN Control »** sur
+chaque ampoule.
+
+### Étape 1 — Activer le mode développeur sur chaque lampe
+
+1. Ouvrez l'app **Yeelight** (iOS / Android).
+2. Sélectionnez votre ampoule.
+3. Touchez l'icône réglages (⚙) en haut à droite.
+4. Activez **LAN Control** (parfois nommé « Mode développeur » ou « Contrôle
+   réseau local »).
+5. Notez l'**adresse IP** affichée dans **Informations sur l'appareil**.
+
+> À refaire pour chaque ampoule. Si LAN Control n'apparaît pas, mettez à jour
+> le firmware de l'ampoule depuis l'app.
+
+### Étape 2 — Saisir dans LampControl
+
+1. **Réglages → Fournisseurs → Yeelight**.
+2. Saisissez l'**IP** (par exemple `192.168.1.42`) — vous pouvez ajouter `:port`
+   si votre lampe écoute sur un port custom (rare).
+3. Optionnel : un **nom** (sinon LampControl utilise celui rapporté par la
+   lampe).
+4. **Ajouter et synchroniser**. Répétez pour chaque ampoule.
+
+La liste est stockée en clair dans
+`~/Library/Application Support/LampControl/yeelight-settings.json` (pas de
+secret à protéger : il n'y a ni clé ni mot de passe).
+
+### Dépannage Yeelight
+
+- **« Délai dépassé »** — LAN Control est désactivé, ou Mac et lampe ne sont
+  pas sur le même réseau (attention aux VLAN invités). Vérifiez avec :
+
+  ```bash
+  nc -vz 192.168.1.42 55443
+  ```
+
+- **Lampe hors ligne** — débranchez/rebranchez la lampe, attendez 30 secondes,
+  cliquez sur **Synchroniser maintenant**.
+- **L'IP a changé** — Yeelight prend une IP DHCP. Si votre routeur change le
+  bail, supprimez l'ancienne entrée (icône poubelle) et ré-ajoutez avec la
+  nouvelle IP. Mieux : réservez une IP dans votre routeur.

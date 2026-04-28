@@ -4,6 +4,8 @@ import SwiftUI
 struct SettingsView: View {
     @EnvironmentObject private var appState: AppState
     @State private var route: SettingsRoute = .overview
+    @State private var newYeelightHost: String = ""
+    @State private var newYeelightName: String = ""
 
     private let ink = LCTheme.ink
     private let muted = LCTheme.muted
@@ -34,6 +36,12 @@ struct SettingsView: View {
                         tuyaSettings
                     case .hue:
                         hueSettings
+                    case .lifx:
+                        lifxSettings
+                    case .govee:
+                        goveeSettings
+                    case .yeelight:
+                        yeelightSettings
                     case .devices:
                         devicesSettings
                     case .updates:
@@ -169,24 +177,15 @@ struct SettingsView: View {
 
             Spacer()
 
-            if provider == .tuya || provider == .philipsHue {
-                Button {
-                    route = provider == .tuya ? .tuya : .hue
-                } label: {
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundStyle(accent)
-                        .frame(width: 28, height: 28)
-                }
-                .liquidGlassButtonStyle()
-            } else {
-                Text("Bientôt")
-                    .font(.system(size: 10, weight: .semibold))
-                    .foregroundStyle(muted)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 5)
-                    .liquidGlassSurface(radius: 10)
+            Button {
+                route = route(for: provider)
+            } label: {
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(accent)
+                    .frame(width: 28, height: 28)
             }
+            .liquidGlassButtonStyle()
         }
     }
 
@@ -205,7 +204,23 @@ struct SettingsView: View {
             return "Connecté et utilisé pour la synchronisation"
         }
 
-        return provider.isImplemented ? "Configuration disponible" : "Prévu dans la roadmap multi-marques"
+        switch provider {
+        case .tuya: return "Compte Smart Life / Tuya Cloud"
+        case .philipsHue: return "Bridge Hue local (LAN)"
+        case .lifx: return "Token LIFX Cloud"
+        case .govee: return "Clé API Govee Developer"
+        case .yeelight: return "Lampes en LAN (mode développeur)"
+        }
+    }
+
+    private func route(for provider: LightProviderKind) -> SettingsRoute {
+        switch provider {
+        case .tuya: .tuya
+        case .philipsHue: .hue
+        case .lifx: .lifx
+        case .govee: .govee
+        case .yeelight: .yeelight
+        }
     }
 
     private var hueSettings: some View {
@@ -291,6 +306,185 @@ struct SettingsView: View {
             }
             .padding(14)
             .liquidGlassSurface(radius: 22)
+        }
+    }
+
+    private var lifxSettings: some View {
+        VStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(spacing: 10) {
+                    Image(systemName: appState.lifxSettings.isConfigured ? "checkmark.seal.fill" : "network")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(appState.lifxSettings.isConfigured ? Color.green : accent)
+                        .frame(width: 32, height: 32)
+                        .liquidGlassSurface(radius: 12, tint: appState.lifxSettings.isConfigured ? Color.green.opacity(0.10) : Color.blue.opacity(0.08))
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(appState.lifxSettings.isConfigured ? "LIFX connecté" : "Connecter LIFX Cloud")
+                            .font(.system(size: 13, weight: .semibold))
+                        Text("Collez un token personnel LIFX pour synchroniser vos lampes.")
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundStyle(muted)
+                    }
+
+                    Spacer()
+                }
+
+                SecureField(appState.lifxSettings.isConfigured ? "Token LIFX enregistré" : "Token LIFX", text: $appState.lifxSettings.token)
+                    .textFieldStyle(.plain)
+                    .foregroundStyle(ink)
+                    .padding(.horizontal, 12)
+                    .frame(height: 38)
+                    .liquidGlassSurface(radius: 13, tint: Color.white.opacity(0.08), interactive: true)
+
+                Button {
+                    Task { await appState.saveLifxSettingsAndSync() }
+                } label: {
+                    Label("Enregistrer et synchroniser", systemImage: "bolt.badge.checkmark")
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 9)
+                }
+                .liquidGlassButtonStyle(prominent: true)
+                .disabled(appState.isBusy || appState.lifxSettings.token.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+
+                Text("Créez le token dans votre compte LIFX Cloud, puis collez-le ici. Il est stocké localement dans le Keychain macOS.")
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(muted)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(14)
+            .liquidGlassSurface(radius: 22)
+        }
+    }
+
+    private var goveeSettings: some View {
+        VStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(spacing: 10) {
+                    Image(systemName: appState.goveeSettings.isConfigured ? "checkmark.seal.fill" : "sparkles")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(appState.goveeSettings.isConfigured ? Color.green : accent)
+                        .frame(width: 32, height: 32)
+                        .liquidGlassSurface(radius: 12, tint: appState.goveeSettings.isConfigured ? Color.green.opacity(0.10) : Color.purple.opacity(0.08))
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(appState.goveeSettings.isConfigured ? "Govee connecté" : "Connecter Govee Cloud")
+                            .font(.system(size: 13, weight: .semibold))
+                        Text("Demandez une clé API depuis l'app Govee Home (\u{2261} → À propos → Apply for API Key).")
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundStyle(muted)
+                    }
+
+                    Spacer()
+                }
+
+                SecureField(appState.goveeSettings.isConfigured ? "Clé API enregistrée" : "Clé API Govee", text: $appState.goveeSettings.apiKey)
+                    .textFieldStyle(.plain)
+                    .foregroundStyle(ink)
+                    .padding(.horizontal, 12)
+                    .frame(height: 38)
+                    .liquidGlassSurface(radius: 13, tint: Color.white.opacity(0.08), interactive: true)
+
+                Button {
+                    Task { await appState.saveGoveeSettingsAndSync() }
+                } label: {
+                    Label("Enregistrer et synchroniser", systemImage: "bolt.badge.checkmark")
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 9)
+                }
+                .liquidGlassButtonStyle(prominent: true)
+                .disabled(appState.isBusy || appState.goveeSettings.apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+
+                Text("La clé est envoyée par e-mail par Govee. Limite de 60 requêtes/minute. Stockée localement dans le Keychain macOS.")
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(muted)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(14)
+            .liquidGlassSurface(radius: 22)
+        }
+    }
+
+    private var yeelightSettings: some View {
+        VStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(spacing: 10) {
+                    Image(systemName: appState.yeelightSettings.isConfigured ? "checkmark.seal.fill" : "wifi")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(appState.yeelightSettings.isConfigured ? Color.green : accent)
+                        .frame(width: 32, height: 32)
+                        .liquidGlassSurface(radius: 12, tint: appState.yeelightSettings.isConfigured ? Color.green.opacity(0.10) : Color.orange.opacity(0.08))
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(appState.yeelightSettings.isConfigured ? "\(appState.yeelightSettings.bulbs.count) lampe(s) Yeelight" : "Ajouter une lampe Yeelight")
+                            .font(.system(size: 13, weight: .semibold))
+                        Text("Activez « LAN Control » dans l'app Yeelight, puis renseignez l'IP locale de la lampe.")
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundStyle(muted)
+                    }
+
+                    Spacer()
+                }
+
+                formField("Adresse IP (ex: 192.168.1.42)", text: $newYeelightHost, icon: "network")
+                formField("Nom (optionnel)", text: $newYeelightName, icon: "tag")
+
+                Button {
+                    Task {
+                        await appState.addYeelightBulb(host: newYeelightHost, name: newYeelightName)
+                        newYeelightHost = ""
+                        newYeelightName = ""
+                    }
+                } label: {
+                    Label("Ajouter et synchroniser", systemImage: "plus.circle.fill")
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 9)
+                }
+                .liquidGlassButtonStyle(prominent: true)
+                .disabled(appState.isBusy || newYeelightHost.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+
+                Text("L'IP est visible dans l'app Yeelight (paramètres de la lampe → Informations sur l'appareil). LAN Control doit être activé sur chaque ampoule.")
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(muted)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(14)
+            .liquidGlassSurface(radius: 22)
+
+            if !appState.yeelightSettings.bulbs.isEmpty {
+                VStack(spacing: 8) {
+                    ForEach(appState.yeelightSettings.bulbs) { bulb in
+                        HStack(spacing: 10) {
+                            Image(systemName: "lightbulb")
+                                .foregroundStyle(accent)
+                                .frame(width: 24, height: 24)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(bulb.name)
+                                    .font(.system(size: 12, weight: .semibold))
+                                Text("\(bulb.host):\(bulb.port)")
+                                    .font(.system(size: 10, weight: .medium, design: .monospaced))
+                                    .foregroundStyle(muted)
+                            }
+                            Spacer()
+                            Button {
+                                Task { await appState.removeYeelightBulb(bulb) }
+                            } label: {
+                                Image(systemName: "trash")
+                                    .font(.system(size: 11, weight: .bold))
+                                    .foregroundStyle(Color.red)
+                                    .frame(width: 28, height: 28)
+                            }
+                            .liquidGlassButtonStyle()
+                            .disabled(appState.isBusy)
+                        }
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 8)
+                        .liquidGlassSurface(radius: 14)
+                    }
+                }
+                .padding(12)
+                .liquidGlassSurface(radius: 22)
+            }
         }
     }
 
@@ -659,6 +853,9 @@ private enum SettingsRoute {
     case providers
     case tuya
     case hue
+    case lifx
+    case govee
+    case yeelight
     case devices
     case updates
     case premium
@@ -670,6 +867,9 @@ private enum SettingsRoute {
         case .providers: "Fournisseurs"
         case .tuya: "Compte Tuya"
         case .hue: "Philips Hue"
+        case .lifx: "LIFX"
+        case .govee: "Govee"
+        case .yeelight: "Yeelight"
         case .devices: "Appareils"
         case .updates: "Mises à jour"
         case .premium: "Premium"
@@ -683,11 +883,17 @@ private enum SettingsRoute {
         case .overview:
             appState.canSync ? "Configuration active" : "Configuration requise"
         case .providers:
-            "Tuya aujourd'hui, Hue et autres ensuite"
+            "Tuya, Hue, LIFX, Govee, Yeelight"
         case .tuya:
             "Identifiants Smart Life / Tuya Cloud"
         case .hue:
             appState.hueSettings.isConfigured ? "Bridge Hue connecté" : "Bridge local à connecter"
+        case .lifx:
+            appState.lifxSettings.isConfigured ? "Token Cloud configuré" : "Token LIFX requis"
+        case .govee:
+            appState.goveeSettings.isConfigured ? "Clé API enregistrée" : "Clé API Govee requise"
+        case .yeelight:
+            appState.yeelightSettings.isConfigured ? "\(appState.yeelightSettings.bulbs.count) lampe(s) en LAN" : "Aucune lampe enregistrée"
         case .devices:
             "\(appState.lamps.count) lampe(s) synchronisée(s)"
         case .updates:
