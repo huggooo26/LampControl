@@ -6,6 +6,10 @@ struct SettingsView: View {
     @State private var route: SettingsRoute = .overview
     @State private var newYeelightHost: String = ""
     @State private var newYeelightName: String = ""
+    @State private var newNanoleafHost: String = ""
+    @State private var newNanoleafName: String = ""
+    @State private var newWizHost: String = ""
+    @State private var newWizName: String = ""
 
     private let ink = LCTheme.ink
     private let muted = LCTheme.muted
@@ -42,6 +46,12 @@ struct SettingsView: View {
                         goveeSettings
                     case .yeelight:
                         yeelightSettings
+                    case .nanoleaf:
+                        nanoleafSettings
+                    case .wiz:
+                        wizSettings
+                    case .shortcuts:
+                        shortcutsSettings
                     case .devices:
                         devicesSettings
                     case .updates:
@@ -109,6 +119,14 @@ struct SettingsView: View {
                     title: "Compte Tuya",
                     subtitle: appState.hasSecret ? "Secret stocké dans le Keychain" : "Identifiants requis",
                     tint: appState.canSync ? Color.green.opacity(0.12) : Color.orange.opacity(0.12)
+                )
+
+                settingsLink(
+                    .shortcuts,
+                    icon: "keyboard",
+                    title: "Raccourcis clavier",
+                    subtitle: "⌥0 Éteindre · ⌥1-⌥4 Scènes",
+                    tint: Color.purple.opacity(0.10)
                 )
 
                 settingsLink(
@@ -194,11 +212,13 @@ struct SettingsView: View {
 
     private func providerIcon(_ provider: LightProviderKind) -> String {
         switch provider {
-        case .tuya: "cloud.fill"
+        case .tuya:       "cloud.fill"
         case .philipsHue: "dot.radiowaves.left.and.right"
-        case .lifx: "network"
-        case .yeelight: "wifi"
-        case .govee: "sparkles"
+        case .lifx:       "network"
+        case .yeelight:   "wifi"
+        case .govee:      "sparkles"
+        case .nanoleaf:   "triangle.fill"
+        case .wiz:        "lightbulb.2.fill"
         }
     }
 
@@ -208,21 +228,25 @@ struct SettingsView: View {
         }
 
         switch provider {
-        case .tuya: return "Compte Smart Life / Tuya Cloud"
+        case .tuya:       return "Compte Smart Life / Tuya Cloud"
         case .philipsHue: return "Bridge Hue local (LAN)"
-        case .lifx: return "Token LIFX Cloud"
-        case .govee: return "Clé API Govee Developer"
-        case .yeelight: return "Lampes en LAN (mode développeur)"
+        case .lifx:       return "Token LIFX Cloud"
+        case .govee:      return "Clé API Govee Developer"
+        case .yeelight:   return "Lampes en LAN (mode développeur)"
+        case .nanoleaf:   return "Panneaux lumineux en LAN"
+        case .wiz:        return "Ampoules WiZ en LAN (Signify)"
         }
     }
 
     private func route(for provider: LightProviderKind) -> SettingsRoute {
         switch provider {
-        case .tuya: .tuya
+        case .tuya:       .tuya
         case .philipsHue: .hue
-        case .lifx: .lifx
-        case .govee: .govee
-        case .yeelight: .yeelight
+        case .lifx:       .lifx
+        case .govee:      .govee
+        case .yeelight:   .yeelight
+        case .nanoleaf:   .nanoleaf
+        case .wiz:        .wiz
         }
     }
 
@@ -489,6 +513,236 @@ struct SettingsView: View {
                 }
                 .padding(12)
                 .liquidGlassSurface(radius: 22)
+            }
+        }
+    }
+
+    // MARK: - Nanoleaf Settings
+
+    private var nanoleafSettings: some View {
+        VStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(spacing: 10) {
+                    Image(systemName: appState.nanoleafSettings.isConfigured ? "checkmark.seal.fill" : "triangle.fill")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(appState.nanoleafSettings.isConfigured ? Color.green : Color.orange)
+                        .frame(width: 32, height: 32)
+                        .liquidGlassSurface(radius: 12, tint: appState.nanoleafSettings.isConfigured ? Color.green.opacity(0.10) : Color.orange.opacity(0.08))
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(appState.nanoleafSettings.isConfigured ? "\(appState.nanoleafSettings.devices.count) panneau(x) Nanoleaf" : "Ajouter un panneau Nanoleaf")
+                            .font(.system(size: 13, weight: .semibold))
+                        Text("Maintenez le bouton power 5-7s jusqu'au clignotement, puis appuyez sur Appairer.")
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundStyle(muted)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    Spacer()
+                }
+
+                formField("Adresse IP (ex: 192.168.1.50)", text: $newNanoleafHost, icon: "network")
+                formField("Nom (optionnel)", text: $newNanoleafName, icon: "tag")
+
+                Button {
+                    Task {
+                        await appState.addNanoleafDevice(host: newNanoleafHost, name: newNanoleafName)
+                        newNanoleafHost = ""
+                        newNanoleafName = ""
+                    }
+                } label: {
+                    Label("Appairer et synchroniser", systemImage: "link.badge.plus")
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 9)
+                }
+                .liquidGlassButtonStyle(prominent: true)
+                .disabled(appState.isBusy || newNanoleafHost.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+
+                hint("Le port par défaut est 16021. Assurez-vous que le panneau est sur le même réseau Wi-Fi.")
+            }
+            .padding(14)
+            .liquidGlassSurface(radius: 22)
+
+            if !appState.nanoleafSettings.devices.isEmpty {
+                VStack(spacing: 8) {
+                    ForEach(appState.nanoleafSettings.devices) { device in
+                        HStack(spacing: 10) {
+                            Image(systemName: "triangle.fill")
+                                .foregroundStyle(Color.orange)
+                                .frame(width: 24, height: 24)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(device.name)
+                                    .font(.system(size: 12, weight: .semibold))
+                                Text("\(device.host):\(device.port)")
+                                    .font(.system(size: 10, weight: .medium, design: .monospaced))
+                                    .foregroundStyle(muted)
+                            }
+                            Spacer()
+                            Button {
+                                Task { await appState.removeNanoleafDevice(device) }
+                            } label: {
+                                Image(systemName: "trash")
+                                    .font(.system(size: 11, weight: .bold))
+                                    .foregroundStyle(Color.red)
+                                    .frame(width: 28, height: 28)
+                            }
+                            .liquidGlassButtonStyle()
+                            .disabled(appState.isBusy)
+                        }
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 8)
+                        .liquidGlassSurface(radius: 14)
+                    }
+                }
+                .padding(12)
+                .liquidGlassSurface(radius: 22)
+            }
+        }
+    }
+
+    // MARK: - WiZ Settings
+
+    private var wizSettings: some View {
+        VStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(spacing: 10) {
+                    Image(systemName: appState.wizSettings.isConfigured ? "checkmark.seal.fill" : "lightbulb.2.fill")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(appState.wizSettings.isConfigured ? Color.green : Color.cyan)
+                        .frame(width: 32, height: 32)
+                        .liquidGlassSurface(radius: 12, tint: appState.wizSettings.isConfigured ? Color.green.opacity(0.10) : Color.cyan.opacity(0.08))
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(appState.wizSettings.isConfigured ? "\(appState.wizSettings.devices.count) ampoule(s) WiZ" : "Ajouter une ampoule WiZ")
+                            .font(.system(size: 13, weight: .semibold))
+                        Text("Ampoules WiZ (Signify) sur le même réseau. Aucune configuration requise.")
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundStyle(muted)
+                    }
+                    Spacer()
+                }
+
+                formField("Adresse IP (ex: 192.168.1.55)", text: $newWizHost, icon: "network")
+                formField("Nom (optionnel)", text: $newWizName, icon: "tag")
+
+                Button {
+                    Task {
+                        await appState.addWizDevice(host: newWizHost, name: newWizName)
+                        newWizHost = ""
+                        newWizName = ""
+                    }
+                } label: {
+                    Label("Ajouter et synchroniser", systemImage: "plus.circle.fill")
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 9)
+                }
+                .liquidGlassButtonStyle(prominent: true)
+                .disabled(appState.isBusy || newWizHost.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+
+                hint("L'IP est visible dans l'app WiZ (paramètres de l'ampoule). Port UDP 38899.")
+            }
+            .padding(14)
+            .liquidGlassSurface(radius: 22)
+
+            if !appState.wizSettings.devices.isEmpty {
+                VStack(spacing: 8) {
+                    ForEach(appState.wizSettings.devices) { device in
+                        HStack(spacing: 10) {
+                            Image(systemName: "lightbulb.2.fill")
+                                .foregroundStyle(Color.cyan)
+                                .frame(width: 24, height: 24)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(device.name)
+                                    .font(.system(size: 12, weight: .semibold))
+                                Text("\(device.host)")
+                                    .font(.system(size: 10, weight: .medium, design: .monospaced))
+                                    .foregroundStyle(muted)
+                            }
+                            Spacer()
+                            Button {
+                                Task { await appState.removeWizDevice(device) }
+                            } label: {
+                                Image(systemName: "trash")
+                                    .font(.system(size: 11, weight: .bold))
+                                    .foregroundStyle(Color.red)
+                                    .frame(width: 28, height: 28)
+                            }
+                            .liquidGlassButtonStyle()
+                            .disabled(appState.isBusy)
+                        }
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 8)
+                        .liquidGlassSurface(radius: 14)
+                    }
+                }
+                .padding(12)
+                .liquidGlassSurface(radius: 22)
+            }
+        }
+    }
+
+    // MARK: - Shortcuts Settings
+
+    private var shortcutsSettings: some View {
+        VStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(spacing: 10) {
+                    Image(systemName: "keyboard")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(Color.purple)
+                        .frame(width: 32, height: 32)
+                        .liquidGlassSurface(radius: 12, tint: Color.purple.opacity(0.10))
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Raccourcis clavier globaux")
+                            .font(.system(size: 13, weight: .semibold))
+                        Text("Contrôlez vos lampes sans ouvrir l'app.")
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundStyle(muted)
+                    }
+                    Spacer()
+                }
+                .padding(12)
+                .liquidGlassSurface(radius: 16)
+
+                ForEach($appState.shortcutSettings.bindings) { $binding in
+                    HStack(spacing: 10) {
+                        Image(systemName: binding.action.icon)
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(binding.isEnabled ? accent : muted)
+                            .frame(width: 28, height: 28)
+                            .liquidGlassSurface(radius: 10, tint: binding.isEnabled ? accent.opacity(0.10) : nil)
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(binding.action.title)
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(ink)
+                            Text(binding.displayKey)
+                                .font(.system(size: 10, weight: .medium).monospaced())
+                                .foregroundStyle(muted)
+                        }
+                        Spacer()
+                        Toggle("", isOn: $binding.isEnabled)
+                            .labelsHidden()
+                            .toggleStyle(.switch)
+                            .scaleEffect(0.8)
+                            .disabled(binding.keyCode == nil)
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 7)
+                    .liquidGlassSurface(radius: 14)
+                    .opacity(binding.keyCode == nil ? 0.55 : 1)
+                }
+
+                Button {
+                    Task { await appState.saveShortcutSettings() }
+                } label: {
+                    Text("Enregistrer les raccourcis")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(Color.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 38)
+                }
+                .liquidGlassButtonStyle(prominent: true)
+                .tint(accent)
+                .disabled(appState.isBusy)
             }
         }
     }
@@ -869,6 +1123,9 @@ private enum SettingsRoute {
     case lifx
     case govee
     case yeelight
+    case nanoleaf
+    case wiz
+    case shortcuts
     case devices
     case updates
     case premium
@@ -878,15 +1135,18 @@ private enum SettingsRoute {
         switch self {
         case .overview: "Réglages"
         case .providers: "Fournisseurs"
-        case .tuya: "Compte Tuya"
-        case .hue: "Philips Hue"
-        case .lifx: "LIFX"
-        case .govee: "Govee"
-        case .yeelight: "Yeelight"
-        case .devices: "Appareils"
-        case .updates: "Mises à jour"
-        case .premium: "Premium"
-        case .about: "À propos"
+        case .tuya:      "Compte Tuya"
+        case .hue:       "Philips Hue"
+        case .lifx:      "LIFX"
+        case .govee:     "Govee"
+        case .yeelight:  "Yeelight"
+        case .nanoleaf:  "Nanoleaf"
+        case .wiz:       "WiZ"
+        case .shortcuts: "Raccourcis"
+        case .devices:   "Appareils"
+        case .updates:   "Mises à jour"
+        case .premium:   "Premium"
+        case .about:     "À propos"
         }
     }
 
@@ -896,7 +1156,7 @@ private enum SettingsRoute {
         case .overview:
             appState.canSync ? "Configuration active" : "Configuration requise"
         case .providers:
-            "Tuya, Hue, LIFX, Govee, Yeelight"
+            "Tuya, Hue, LIFX, Govee, Yeelight, Nanoleaf, WiZ"
         case .tuya:
             "Identifiants Smart Life / Tuya Cloud"
         case .hue:
@@ -907,6 +1167,12 @@ private enum SettingsRoute {
             appState.goveeSettings.isConfigured ? "Clé API enregistrée" : "Clé API Govee requise"
         case .yeelight:
             appState.yeelightSettings.isConfigured ? "\(appState.yeelightSettings.bulbs.count) lampe(s) en LAN" : "Aucune lampe enregistrée"
+        case .nanoleaf:
+            appState.nanoleafSettings.isConfigured ? "\(appState.nanoleafSettings.devices.count) panneau(x) en LAN" : "Aucun panneau enregistré"
+        case .wiz:
+            appState.wizSettings.isConfigured ? "\(appState.wizSettings.devices.count) ampoule(s) en LAN" : "Aucune ampoule enregistrée"
+        case .shortcuts:
+            "Raccourcis ⌥0–⌥4 configurables"
         case .devices:
             "\(appState.lamps.count) lampe(s) synchronisée(s)"
         case .updates:

@@ -9,12 +9,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     private let popover = NSPopover()
     private let appState = AppState()
     private var cancellables = Set<AnyCancellable>()
+    private let globalShortcutService = GlobalShortcutService()
     private var contextMenu: NSMenu?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         configurePopover()
         configureStatusItem()
         appState.updateService.start()
+        configureShortcuts()
     }
 
     private func configurePopover() {
@@ -81,6 +83,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         statusItem?.menu = menu
         button.performClick(nil)
         statusItem?.menu = nil
+    }
+
+    private func configureShortcuts() {
+        globalShortcutService.onAction = { [weak self] action in
+            Task { @MainActor in self?.appState.executeShortcutAction(action) }
+        }
+        globalShortcutService.start(with: appState.shortcutSettings.bindings)
+
+        NotificationCenter.default.addObserver(forName: .shortcutSettingsDidChange, object: nil, queue: .main) { [weak self] _ in
+            guard let self else { return }
+            self.globalShortcutService.start(with: self.appState.shortcutSettings.bindings)
+        }
     }
 
     @objc private func checkForUpdates() {

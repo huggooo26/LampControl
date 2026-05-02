@@ -6,20 +6,22 @@ enum LightProviderKind: String, Codable, CaseIterable, Hashable {
     case lifx
     case yeelight
     case govee
+    case nanoleaf
+    case wiz
 
     var title: String {
         switch self {
-        case .tuya: "Tuya / Smart Life"
+        case .tuya:      "Tuya / Smart Life"
         case .philipsHue: "Philips Hue"
-        case .lifx: "LIFX"
-        case .yeelight: "Yeelight"
-        case .govee: "Govee"
+        case .lifx:      "LIFX"
+        case .yeelight:  "Yeelight"
+        case .govee:     "Govee"
+        case .nanoleaf:  "Nanoleaf"
+        case .wiz:       "WiZ (Signify)"
         }
     }
 
-    var isImplemented: Bool {
-        true
-    }
+    var isImplemented: Bool { true }
 }
 
 protocol LightProvider: AnyObject {

@@ -8,6 +8,9 @@ final class AppState: ObservableObject {
     @Published var lifxSettings = LifxSettings()
     @Published var goveeSettings = GoveeSettings()
     @Published var yeelightSettings = YeelightSettings()
+    @Published var nanoleafSettings = NanoleafSettings()
+    @Published var wizSettings = WizSettings()
+    @Published var shortcutSettings = ShortcutSettings.default
     @Published var discoveredHueBridges: [HueBridge] = []
     @Published var lamps: [LampDevice] = []
     @Published var selectedTab: ControlTab = .lamps
@@ -31,6 +34,9 @@ final class AppState: ObservableObject {
     private let lifxSettingsStore = LifxSettingsStore()
     private let goveeSettingsStore = GoveeSettingsStore()
     private let yeelightSettingsStore = YeelightSettingsStore()
+    private let nanoleafSettingsStore = NanoleafSettingsStore()
+    private let wizSettingsStore = WizSettingsStore()
+    private let shortcutSettingsStore = ShortcutSettingsStore()
     private let hueClient = HueClient()
     private let sceneStore = LightSceneStore()
     private let licenseStore = LicenseStore()
@@ -48,6 +54,9 @@ final class AppState: ObservableObject {
             loadLifxSettings()
             loadGoveeSettings()
             loadYeelightSettings()
+            loadNanoleafSettings()
+            loadWizSettings()
+            loadShortcutSettings()
             await syncLamps(silent: true)
             startAutoSync()
         }
@@ -87,6 +96,8 @@ final class AppState: ObservableObject {
         if lifxSettings.isConfigured { providers.append(.lifx) }
         if goveeSettings.isConfigured { providers.append(.govee) }
         if yeelightSettings.isConfigured { providers.append(.yeelight) }
+        if nanoleafSettings.isConfigured { providers.append(.nanoleaf) }
+        if wizSettings.isConfigured { providers.append(.wiz) }
         return providers
     }
 
@@ -663,6 +674,16 @@ final class AppState: ObservableObject {
                 throw LampControlError.configuration("Aucune lampe Yeelight enregistrée.")
             }
             provider = YeelightLightProvider(settings: yeelightSettings)
+        case .nanoleaf:
+            guard nanoleafSettings.isConfigured else {
+                throw LampControlError.configuration("Aucun panneau Nanoleaf enregistré.")
+            }
+            provider = NanoleafLightProvider(settings: nanoleafSettings)
+        case .wiz:
+            guard wizSettings.isConfigured else {
+                throw LampControlError.configuration("Aucune ampoule WiZ enregistrée.")
+            }
+            provider = WizLightProvider(settings: wizSettings)
         }
 
         lightProviders[kind] = provider
@@ -710,6 +731,135 @@ final class AppState: ObservableObject {
         } catch {
             message = "Réglages Yeelight illisibles."
         }
+    }
+
+    // MARK: - Nanoleaf
+
+    func addNanoleafDevice(host: String, name: String) async {
+        let cleanHost = host.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !cleanHost.isEmpty else { message = "Adresse IP Nanoleaf requise."; return }
+
+        await runBusy {
+            let client = NanoleafClient()
+            let token = try await client.pairDevice(host: cleanHost)
+            let device = NanoleafDevice(name: name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? cleanHost : name.trimmingCharacters(in: .whitespacesAndNewlines),
+                                        host: cleanHost, authToken: token)
+            var next = nanoleafSettings
+            next.devices.append(device)
+            nanoleafSettings = try nanoleafSettingsStore.save(next)
+            lightProviders[.nanoleaf] = nil
+            let synced = try await syncConfiguredProviders()
+            lamps = synced
+            selectedLampIds = selectedLampIds.intersection(Set(synced.map(\.id)))
+            expandedLampIds = expandedLampIds.intersection(Set(synced.map(\.id)))
+            lastSyncDate = Date()
+            message = "Nanoleaf ajouté. \(synced.count) lampe(s) synchronisée(s)."
+        }
+    }
+
+    func removeNanoleafDevice(_ device: NanoleafDevice) async {
+        var next = nanoleafSettings
+        next.devices.removeAll { $0.id == device.id }
+        await runBusy {
+            nanoleafSettings = try nanoleafSettingsStore.save(next)
+            lightProviders[.nanoleaf] = nil
+            let synced = try await syncConfiguredProviders()
+            lamps = synced
+            selectedLampIds = selectedLampIds.intersection(Set(synced.map(\.id)))
+            expandedLampIds = expandedLampIds.intersection(Set(synced.map(\.id)))
+            lastSyncDate = Date()
+            message = "Nanoleaf retiré."
+        }
+    }
+
+    private func loadNanoleafSettings() {
+        do { nanoleafSettings = try nanoleafSettingsStore.load() } catch { }
+    }
+
+    // MARK: - WiZ
+
+    func addWizDevice(host: String, name: String) async {
+        let cleanHost = host.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !cleanHost.isEmpty else { message = "Adresse IP WiZ requise."; return }
+
+        let device = WizDevice(name: name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? cleanHost : name.trimmingCharacters(in: .whitespacesAndNewlines),
+                               host: cleanHost)
+        var next = wizSettings
+        next.devices.append(device)
+
+        await runBusy {
+            wizSettings = try wizSettingsStore.save(next)
+            lightProviders[.wiz] = nil
+            let synced = try await syncConfiguredProviders()
+            lamps = synced
+            selectedLampIds = selectedLampIds.intersection(Set(synced.map(\.id)))
+            expandedLampIds = expandedLampIds.intersection(Set(synced.map(\.id)))
+            lastSyncDate = Date()
+            message = "WiZ ajoutée. \(synced.count) lampe(s) synchronisée(s)."
+        }
+    }
+
+    func removeWizDevice(_ device: WizDevice) async {
+        var next = wizSettings
+        next.devices.removeAll { $0.id == device.id }
+        await runBusy {
+            wizSettings = try wizSettingsStore.save(next)
+            lightProviders[.wiz] = nil
+            let synced = try await syncConfiguredProviders()
+            lamps = synced
+            selectedLampIds = selectedLampIds.intersection(Set(synced.map(\.id)))
+            expandedLampIds = expandedLampIds.intersection(Set(synced.map(\.id)))
+            lastSyncDate = Date()
+            message = "WiZ retirée."
+        }
+    }
+
+    private func loadWizSettings() {
+        do { wizSettings = try wizSettingsStore.load() } catch { }
+    }
+
+    // MARK: - Shortcuts
+
+    func executeShortcutAction(_ action: ShortcutAction) {
+        Task { @MainActor in
+            switch action {
+            case .powerOffAll:     await applyPowerAll(false)
+            case .powerOnAll:      await applyPowerAll(true)
+            case .applySceneFocus:
+                if let p = LightScenePreset.presets.first(where: { $0.id == "focus" }) { await applyScene(p) }
+            case .applySceneRelax:
+                if let p = LightScenePreset.presets.first(where: { $0.id == "relax" }) { await applyScene(p) }
+            case .applySceneNeon:
+                if let p = LightScenePreset.presets.first(where: { $0.id == "neon" })  { await applyScene(p) }
+            case .applySceneNight:
+                if let p = LightScenePreset.presets.first(where: { $0.id == "night" }) { await applyScene(p) }
+            }
+        }
+    }
+
+    func applyPowerAll(_ value: Bool) async {
+        let targets = lamps.filter { $0.online }
+        guard !targets.isEmpty else { return }
+        await runBusy {
+            var updated: [LampDevice] = []
+            for lamp in targets {
+                updated.append(try await makeLightProvider(for: lamp).setPower(deviceId: lamp.nativeID, value: value))
+            }
+            for lamp in updated { updateLamp(lamp) }
+            message = value ? "Toutes les lampes allumées." : "Toutes les lampes éteintes."
+        }
+    }
+
+    func saveShortcutSettings() async {
+        await runBusy {
+            shortcutSettings = try shortcutSettingsStore.save(shortcutSettings)
+            message = "Raccourcis enregistrés."
+        }
+        NotificationCenter.default.post(name: .shortcutSettingsDidChange, object: nil)
+    }
+
+    private func loadShortcutSettings() {
+        shortcutSettings = (try? shortcutSettingsStore.load()) ?? .default
     }
 
     private func presentOnboardingIfNeeded() {

@@ -9,8 +9,32 @@ All notable changes to LampControl are documented here. The format follows
 ### Planned
 
 - Apple notarization and Developer ID signature.
-- HomeKit bridge and automation triggers.
+- HomeKit / Matter bridge.
+- WidgetKit macOS widget (requires Xcode project restructure).
 - Full English UI localization.
+
+## [1.0.12] - 2026-05-02
+
+### Added
+
+- **Nanoleaf provider** — panels paired over LAN (REST, port 16021). Pairing
+  flow: hold power button 5-7s, then tap "Appairer" in settings. Supports
+  power, brightness (0-100), color temperature (1200-6500K), and hue/sat color.
+- **WiZ provider** (Signify) — bulbs controlled over LAN via UDP port 38899.
+  Manual IP entry, no authentication required. Full power, brightness
+  (1-100), color temperature (2200-6500K), and RGB color support (HSV↔RGB
+  conversion included).
+- **Global keyboard shortcuts** — configurable hotkeys without opening the
+  popover. Defaults: ⌥0 Éteindre tout · ⌥1 Focus · ⌥2 Relax · ⌥3 Neon ·
+  ⌥4 Nuit. Toggle on/off per shortcut in Réglages → Raccourcis clavier.
+  Uses `NSEvent.addGlobalMonitorForEvents` — no Accessibility permission
+  required.
+
+### Changed
+
+- `LightProviderKind` extended with `.nanoleaf` and `.wiz`.
+- Settings overview now shows Raccourcis clavier link.
+- Provider list includes Nanoleaf and WiZ with dedicated configuration pages.
 
 ## [1.0.11] - 2026-05-02
 
