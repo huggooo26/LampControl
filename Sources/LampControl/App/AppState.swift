@@ -389,6 +389,10 @@ final class AppState: ObservableObject {
             height += 8 + 38
         }
 
+        if !profiles.isEmpty {
+            height += 8 + 76
+        }
+
         if lamps.contains(where: { $0.capabilities.colorCode != nil }) {
             height += 8 + 64
             height += 8 + (isGroupPanelExpanded || selectedLampIds.count >= 2 ? 206 : 54)
@@ -1022,10 +1026,8 @@ final class AppState: ObservableObject {
         _ = try? circadianSettingsStore.save(circadianSettings)
         if enabled {
             circadianService.start(with: circadianSettings)
-            message = "Éclairage adaptatif activé."
         } else {
             circadianService.stop()
-            message = "Éclairage adaptatif désactivé."
         }
     }
 
