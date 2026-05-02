@@ -29,19 +29,28 @@ struct LicenseEntitlements: Codable, Equatable {
     var canUseGroups: Bool
     var canUseCustomScenes: Bool
     var canUseScenePresets: Bool
+    var canUseProfiles: Bool
+    var canUseAutomations: Bool
+    var canUseAdaptiveLighting: Bool
 
     static let free = LicenseEntitlements(
         maxLamps: 2,
         canUseGroups: false,
         canUseCustomScenes: false,
-        canUseScenePresets: true
+        canUseScenePresets: true,
+        canUseProfiles: false,
+        canUseAutomations: false,
+        canUseAdaptiveLighting: false
     )
 
     static let premium = LicenseEntitlements(
         maxLamps: nil,
         canUseGroups: true,
         canUseCustomScenes: true,
-        canUseScenePresets: true
+        canUseScenePresets: true,
+        canUseProfiles: true,
+        canUseAutomations: true,
+        canUseAdaptiveLighting: true
     )
 }
 

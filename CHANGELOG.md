@@ -11,7 +11,27 @@ All notable changes to LampControl are documented here. The format follows
 - Apple notarization and Developer ID signature.
 - HomeKit / Matter bridge.
 - WidgetKit macOS widget (requires Xcode project restructure).
+- Siri / AppIntents integration.
 - Full English UI localization.
+
+## [1.0.13] - 2026-05-02
+
+### Added
+
+- **Profils** — snapshot de l'état complet de toutes les lampes (power,
+  brightness, température, couleur). Créer via le bouton + dans la ProfileBar,
+  appliquer en un clic, supprimer via menu contextuel. Affiché dans LampsView
+  au-dessus des scènes. Gated Premium.
+- **Éclairage adaptatif (Circadian)** — ajuste automatiquement la luminosité et
+  la température de couleur selon l'heure. 6 keyframes par défaut (06h→22h).
+  Interpolation linéaire entre les points. Mise à jour toutes les 15 min.
+  Toggle rapide dans LampsView, configuration complète dans Réglages. Gated Premium.
+- **Automations** — planifications horaires récurrentes (heure fixe, jours
+  filtrables). Actions disponibles : éteindre tout, allumer tout, appliquer une
+  scène ou un profil, activer/désactiver l'éclairage adaptatif. Scheduler Timer
+  aligné à la minute. Création via formulaire inline. Gated Premium.
+- `LicenseEntitlements` : +`canUseProfiles`, +`canUseAutomations`,
+  +`canUseAdaptiveLighting` (tous activés en earlyAccess et premium).
 
 ## [1.0.12] - 2026-05-02
 

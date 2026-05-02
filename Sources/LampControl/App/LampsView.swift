@@ -28,6 +28,14 @@ struct LampsView: View {
                 emptyStateCard
             }
 
+            if !appState.profiles.isEmpty || appState.licenseState.entitlements.canUseProfiles {
+                ProfileBar()
+            }
+
+            if appState.circadianSettings.isEnabled || appState.licenseState.entitlements.canUseAdaptiveLighting {
+                CircadianToggleRow()
+            }
+
             if appState.lamps.contains(where: { $0.capabilities.colorCode != nil }) {
                 ScenePresetBar()
                 GroupControlEntry()
@@ -877,6 +885,190 @@ extension Color {
             saturation: Double(hsv.s) / 1000.0,
             brightness: Double(hsv.v) / 1000.0
         )
+    }
+}
+
+// MARK: - Profile Bar
+
+private struct ProfileBar: View {
+    @EnvironmentObject private var appState: AppState
+    @State private var isCreating = false
+    @State private var draftName = ""
+    @State private var draftIcon = "square.stack.3d.up.fill"
+
+    private let profileIcons = [
+        "square.stack.3d.up.fill", "briefcase.fill", "film.fill",
+        "gamecontroller.fill", "bed.double.fill", "sun.max.fill",
+        "moon.fill", "fork.knife", "house.fill"
+    ]
+
+    var body: some View {
+        VStack(spacing: 8) {
+            ScrollView(.horizontal) {
+                HStack(spacing: 7) {
+                    ForEach(appState.profiles) { profile in
+                        Button {
+                            Task { await appState.applyProfile(profile) }
+                        } label: {
+                            VStack(spacing: 4) {
+                                Image(systemName: profile.icon)
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundStyle(LCTheme.accent)
+                                    .frame(height: 13)
+                                Text(profile.name)
+                                    .font(.system(size: 10, weight: .semibold))
+                                    .foregroundStyle(LCTheme.ink)
+                                    .lineLimit(1)
+                            }
+                            .frame(width: 62)
+                            .frame(height: 52)
+                            .liquidGlassSurface(radius: 15, tint: LCTheme.accent.opacity(0.08), interactive: true)
+                            .shadow(color: Color.black.opacity(0.10), radius: 4, y: 2)
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(appState.isBusy)
+                        .opacity(appState.isBusy ? 0.55 : 1)
+                        .help("Appliquer le profil « \(profile.name) »")
+                        .contextMenu {
+                            Button("Supprimer", role: .destructive) {
+                                appState.deleteProfile(profile)
+                            }
+                        }
+                    }
+
+                    Button { beginCreating() } label: {
+                        VStack(spacing: 4) {
+                            Image(systemName: "plus")
+                                .font(.system(size: 12, weight: .bold))
+                            Text("Profil")
+                                .font(.system(size: 10, weight: .semibold))
+                        }
+                        .foregroundStyle(LCTheme.accent)
+                        .frame(width: 62)
+                        .frame(height: 52)
+                        .liquidGlassSurface(radius: 15, tint: LCTheme.accent.opacity(0.10), interactive: true)
+                    }
+                    .buttonStyle(.plain)
+                    .help("Sauvegarder l'état actuel comme profil")
+                }
+                .padding(.horizontal, 2)
+            }
+            .scrollIndicators(.hidden)
+
+            if isCreating {
+                HStack(spacing: 8) {
+                    TextField("Nom du profil", text: $draftName)
+                        .textFieldStyle(.plain)
+                        .font(.system(size: 12, weight: .semibold))
+                        .padding(.horizontal, 10)
+                        .frame(height: 32)
+                        .liquidGlassSurface(radius: 12, tint: Color.white.opacity(0.06), interactive: true)
+
+                    Picker("", selection: $draftIcon) {
+                        ForEach(profileIcons, id: \.self) { icon in
+                            Image(systemName: icon).tag(icon)
+                        }
+                    }
+                    .labelsHidden()
+                    .pickerStyle(.menu)
+                    .frame(width: 48, height: 32)
+                    .liquidGlassSurface(radius: 12, tint: Color.white.opacity(0.06))
+
+                    Button {
+                        let name = draftName.trimmingCharacters(in: .whitespacesAndNewlines)
+                        guard !name.isEmpty else { return }
+                        appState.saveCurrentProfile(name: name, icon: draftIcon)
+                        isCreating = false
+                        draftName = ""
+                    } label: {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundStyle(Color.white)
+                            .frame(width: 34, height: 32)
+                    }
+                    .liquidGlassButtonStyle(prominent: true)
+                    .disabled(draftName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+
+                    Button { isCreating = false } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundStyle(LCTheme.muted)
+                            .frame(width: 34, height: 32)
+                    }
+                    .liquidGlassButtonStyle()
+                }
+                .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+        }
+        .padding(10)
+        .liquidGlassSurface(radius: 18)
+        .animation(.spring(response: 0.28, dampingFraction: 0.88), value: isCreating)
+    }
+
+    private func beginCreating() {
+        draftName = ""
+        draftIcon = "square.stack.3d.up.fill"
+        isCreating = true
+    }
+}
+
+// MARK: - Circadian Toggle Row
+
+private struct CircadianToggleRow: View {
+    @EnvironmentObject private var appState: AppState
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "sun.and.horizon.fill")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(appState.circadianSettings.isEnabled ? Color.orange : LCTheme.muted)
+                .frame(width: 30, height: 30)
+                .liquidGlassSurface(radius: 12, tint: appState.circadianSettings.isEnabled ? Color.orange.opacity(0.12) : nil)
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text("Éclairage adaptatif")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(LCTheme.ink)
+                if appState.circadianSettings.isEnabled {
+                    let v = appState.circadianService.currentValues()
+                    Text("\(v.brightness)% · \(v.temperature)K")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(LCTheme.muted)
+                } else {
+                    Text("Ajuste temp. et luminosité selon l'heure")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(LCTheme.muted)
+                }
+            }
+
+            Spacer()
+
+            if appState.circadianSettings.isEnabled {
+                Button {
+                    Task { await appState.applyCircadianNow() }
+                } label: {
+                    Image(systemName: "arrow.clockwise")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(LCTheme.accent)
+                        .frame(width: 28, height: 28)
+                        .liquidGlassSurface(radius: 10, interactive: true)
+                }
+                .buttonStyle(.plain)
+                .disabled(appState.isBusy)
+            }
+
+            Toggle("", isOn: Binding(
+                get: { appState.circadianSettings.isEnabled },
+                set: { newVal in Task { await appState.setAdaptiveLighting(enabled: newVal) } }
+            ))
+            .labelsHidden()
+            .toggleStyle(.switch)
+            .scaleEffect(0.8)
+            .disabled(!appState.licenseState.entitlements.canUseAdaptiveLighting)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .liquidGlassSurface(radius: 17, tint: appState.circadianSettings.isEnabled ? Color.orange.opacity(0.06) : nil)
     }
 }
 

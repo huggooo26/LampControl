@@ -17,6 +17,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         configureStatusItem()
         appState.updateService.start()
         configureShortcuts()
+        appState.startAutomationScheduler()
+        appState.startCircadianService()
     }
 
     private func configurePopover() {

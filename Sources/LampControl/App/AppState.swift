@@ -11,6 +11,9 @@ final class AppState: ObservableObject {
     @Published var nanoleafSettings = NanoleafSettings()
     @Published var wizSettings = WizSettings()
     @Published var shortcutSettings = ShortcutSettings.default
+    @Published var profiles: [LampProfile] = []
+    @Published var automations: [Automation] = []
+    @Published var circadianSettings = CircadianSettings.default
     @Published var discoveredHueBridges: [HueBridge] = []
     @Published var lamps: [LampDevice] = []
     @Published var selectedTab: ControlTab = .lamps
@@ -37,6 +40,11 @@ final class AppState: ObservableObject {
     private let nanoleafSettingsStore = NanoleafSettingsStore()
     private let wizSettingsStore = WizSettingsStore()
     private let shortcutSettingsStore = ShortcutSettingsStore()
+    private let profileStore = ProfileStore()
+    private let automationStore = AutomationStore()
+    private let circadianSettingsStore = CircadianSettingsStore()
+    private let automationScheduler = AutomationScheduler()
+    let circadianService = CircadianService()
     private let hueClient = HueClient()
     private let sceneStore = LightSceneStore()
     private let licenseStore = LicenseStore()
@@ -57,6 +65,9 @@ final class AppState: ObservableObject {
             loadNanoleafSettings()
             loadWizSettings()
             loadShortcutSettings()
+            loadProfiles()
+            loadAutomations()
+            loadCircadianSettings()
             await syncLamps(silent: true)
             startAutoSync()
         }
@@ -860,6 +871,202 @@ final class AppState: ObservableObject {
 
     private func loadShortcutSettings() {
         shortcutSettings = (try? shortcutSettingsStore.load()) ?? .default
+    }
+
+    // MARK: - Profiles
+
+    func saveCurrentProfile(name: String, icon: String) {
+        guard licenseState.entitlements.canUseProfiles else {
+            message = "Les profils sont inclus dans Premium."
+            return
+        }
+        guard !lamps.isEmpty else {
+            message = "Aucune lampe à sauvegarder."
+            return
+        }
+        let snapshots = lamps.map { lamp in
+            LampSnapshot(
+                lampId: lamp.id,
+                nativeID: lamp.nativeID,
+                providerID: lamp.providerID,
+                name: lamp.name,
+                power: lamp.power,
+                brightness: lamp.brightness,
+                temperature: lamp.temperature,
+                color: lamp.color
+            )
+        }
+        let profile = LampProfile(name: name, icon: icon, snapshots: snapshots)
+        profiles.append(profile)
+        try? profileStore.save(profiles)
+        message = "Profil « \(name) » sauvegardé."
+    }
+
+    func applyProfile(_ profile: LampProfile) async {
+        guard licenseState.entitlements.canUseProfiles else {
+            message = "Les profils sont inclus dans Premium."
+            return
+        }
+        guard !profile.snapshots.isEmpty else {
+            message = "Ce profil est vide."
+            return
+        }
+        await runBusy {
+            var updated: [LampDevice] = []
+            for snap in profile.snapshots {
+                guard let lamp = lamps.first(where: { $0.id == snap.lampId && $0.online }) else { continue }
+                let provider = try makeLightProvider(for: lamp)
+                if let color = snap.color, lamp.capabilities.colorCode != nil {
+                    updated.append(try await provider.setColor(deviceId: lamp.nativeID, color: color))
+                } else if let brightness = snap.brightness, lamp.capabilities.brightness != nil {
+                    updated.append(try await provider.setBrightness(deviceId: lamp.nativeID, value: brightness))
+                } else if let temp = snap.temperature, lamp.capabilities.temperature != nil {
+                    updated.append(try await provider.setTemperature(deviceId: lamp.nativeID, value: temp))
+                }
+                if !snap.power {
+                    updated.append(try await provider.setPower(deviceId: lamp.nativeID, value: false))
+                }
+            }
+            for lamp in updated { updateLamp(lamp) }
+            message = "Profil « \(profile.name) » appliqué."
+        }
+    }
+
+    func deleteProfile(_ profile: LampProfile) {
+        profiles.removeAll { $0.id == profile.id }
+        try? profileStore.save(profiles)
+        message = "Profil supprimé."
+    }
+
+    private func loadProfiles() {
+        profiles = (try? profileStore.load()) ?? []
+    }
+
+    // MARK: - Automations
+
+    func saveAutomation(_ automation: Automation) {
+        guard licenseState.entitlements.canUseAutomations else {
+            message = "Les automations sont incluses dans Premium."
+            return
+        }
+        if let idx = automations.firstIndex(where: { $0.id == automation.id }) {
+            automations[idx] = automation
+        } else {
+            automations.append(automation)
+        }
+        try? automationStore.save(automations)
+        automationScheduler.update(automations: automations)
+        message = "Automation « \(automation.name) » enregistrée."
+    }
+
+    func deleteAutomation(_ automation: Automation) {
+        automations.removeAll { $0.id == automation.id }
+        try? automationStore.save(automations)
+        automationScheduler.update(automations: automations)
+        message = "Automation supprimée."
+    }
+
+    func toggleAutomation(_ automation: Automation) {
+        guard let idx = automations.firstIndex(where: { $0.id == automation.id }) else { return }
+        automations[idx].isEnabled.toggle()
+        try? automationStore.save(automations)
+        automationScheduler.update(automations: automations)
+    }
+
+    func executeAutomationAction(_ action: AutomationAction) async {
+        switch action {
+        case .powerOffAll:
+            await applyPowerAll(false)
+        case .powerOnAll:
+            await applyPowerAll(true)
+        case .applyScenePreset(let id):
+            if let preset = LightScenePreset.presets.first(where: { $0.id == id }) {
+                await applyScene(preset)
+            }
+        case .applyProfile(let id):
+            if let profile = profiles.first(where: { $0.id == id }) {
+                await applyProfile(profile)
+            }
+        case .enableAdaptiveLighting:
+            await setAdaptiveLighting(enabled: true)
+        case .disableAdaptiveLighting:
+            await setAdaptiveLighting(enabled: false)
+        }
+    }
+
+    func startAutomationScheduler() {
+        automationScheduler.onFire = { [weak self] automation in
+            guard let self else { return }
+            var updated = automation
+            updated.lastFiredDate = Date()
+            if let idx = self.automations.firstIndex(where: { $0.id == automation.id }) {
+                self.automations[idx] = updated
+            }
+            Task { await self.executeAutomationAction(automation.action) }
+        }
+        automationScheduler.start(with: automations)
+    }
+
+    private func loadAutomations() {
+        automations = (try? automationStore.load()) ?? []
+    }
+
+    // MARK: - Adaptive Lighting
+
+    func setAdaptiveLighting(enabled: Bool) async {
+        guard licenseState.entitlements.canUseAdaptiveLighting || !enabled else {
+            message = "L'éclairage adaptatif est inclus dans Premium."
+            return
+        }
+        circadianSettings.isEnabled = enabled
+        _ = try? circadianSettingsStore.save(circadianSettings)
+        if enabled {
+            circadianService.start(with: circadianSettings)
+            message = "Éclairage adaptatif activé."
+        } else {
+            circadianService.stop()
+            message = "Éclairage adaptatif désactivé."
+        }
+    }
+
+    func saveCircadianSettings(_ settings: CircadianSettings) async {
+        await runBusy {
+            circadianSettings = try circadianSettingsStore.save(settings)
+            circadianService.start(with: circadianSettings)
+            message = "Réglages adaptatifs enregistrés."
+        }
+    }
+
+    func applyCircadianNow() async {
+        guard circadianSettings.isEnabled else { return }
+        let (brightness, temperature) = circadianService.currentValues()
+        let targets = lamps.filter { $0.online }
+        await runBusy {
+            for lamp in targets {
+                let provider = try makeLightProvider(for: lamp)
+                if circadianSettings.applyBrightness, lamp.capabilities.brightness != nil {
+                    _ = try? await provider.setBrightness(deviceId: lamp.nativeID, value: brightness)
+                }
+                if circadianSettings.applyTemperature, lamp.capabilities.temperature != nil {
+                    _ = try? await provider.setTemperature(deviceId: lamp.nativeID, value: temperature)
+                }
+            }
+            message = "Éclairage adaptatif appliqué (\(brightness)%, \(temperature)K)."
+        }
+    }
+
+    func startCircadianService() {
+        circadianService.onApply = { [weak self] brightness, temperature in
+            guard let self else { return }
+            Task { await self.applyCircadianNow() }
+        }
+        if circadianSettings.isEnabled {
+            circadianService.start(with: circadianSettings)
+        }
+    }
+
+    private func loadCircadianSettings() {
+        circadianSettings = (try? circadianSettingsStore.load()) ?? .default
     }
 
     private func presentOnboardingIfNeeded() {

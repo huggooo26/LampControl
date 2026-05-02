@@ -10,6 +10,8 @@ struct SettingsView: View {
     @State private var newNanoleafName: String = ""
     @State private var newWizHost: String = ""
     @State private var newWizName: String = ""
+    @State private var editingAutomation: Automation?
+    @State private var isAddingAutomation = false
 
     private let ink = LCTheme.ink
     private let muted = LCTheme.muted
@@ -52,6 +54,10 @@ struct SettingsView: View {
                         wizSettings
                     case .shortcuts:
                         shortcutsSettings
+                    case .automations:
+                        automationsSettings
+                    case .circadian:
+                        circadianSettings_
                     case .devices:
                         devicesSettings
                     case .updates:
@@ -127,6 +133,22 @@ struct SettingsView: View {
                     title: "Raccourcis clavier",
                     subtitle: "⌥0 Éteindre · ⌥1-⌥4 Scènes",
                     tint: Color.purple.opacity(0.10)
+                )
+
+                settingsLink(
+                    .automations,
+                    icon: "clock.badge.checkmark.fill",
+                    title: "Automations",
+                    subtitle: appState.automations.isEmpty ? "Planifiez vos lampes" : "\(appState.automations.filter(\.isEnabled).count) active(s)",
+                    tint: Color.green.opacity(0.10)
+                )
+
+                settingsLink(
+                    .circadian,
+                    icon: "sun.and.horizon.fill",
+                    title: "Éclairage adaptatif",
+                    subtitle: appState.circadianSettings.isEnabled ? "Actif" : "Ajuste temp. selon l'heure",
+                    tint: Color.orange.opacity(0.10)
                 )
 
                 settingsLink(
@@ -680,6 +702,213 @@ struct SettingsView: View {
         }
     }
 
+    // MARK: - Automations Settings
+
+    private var automationsSettings: some View {
+        VStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(spacing: 10) {
+                    Image(systemName: "clock.badge.checkmark.fill")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(Color.green)
+                        .frame(width: 32, height: 32)
+                        .liquidGlassSurface(radius: 12, tint: Color.green.opacity(0.10))
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Automations")
+                            .font(.system(size: 13, weight: .semibold))
+                        Text("Déclenchez des actions à heure fixe, chaque jour ou certains jours.")
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundStyle(muted)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    Spacer()
+                }
+                .padding(12)
+                .liquidGlassSurface(radius: 16)
+
+                if appState.automations.isEmpty {
+                    HStack(spacing: 10) {
+                        Image(systemName: "clock.badge.xmark")
+                            .foregroundStyle(muted)
+                            .frame(width: 24, height: 24)
+                        Text("Aucune automation. Créez-en une ci-dessous.")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundStyle(muted)
+                        Spacer()
+                    }
+                    .padding(12)
+                    .liquidGlassSurface(radius: 14)
+                } else {
+                    ForEach(appState.automations) { automation in
+                        HStack(spacing: 10) {
+                            Image(systemName: automation.action.icon)
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundStyle(automation.isEnabled ? accent : muted)
+                                .frame(width: 28, height: 28)
+                                .liquidGlassSurface(radius: 10, tint: automation.isEnabled ? accent.opacity(0.10) : nil)
+
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text(automation.name)
+                                    .font(.system(size: 12, weight: .semibold))
+                                    .foregroundStyle(ink)
+                                Text("\(automation.timeString) · \(automation.weekdaysLabel)")
+                                    .font(.system(size: 10, weight: .medium))
+                                    .foregroundStyle(muted)
+                            }
+
+                            Spacer()
+
+                            Toggle("", isOn: Binding(
+                                get: { automation.isEnabled },
+                                set: { _ in appState.toggleAutomation(automation) }
+                            ))
+                            .labelsHidden()
+                            .toggleStyle(.switch)
+                            .scaleEffect(0.8)
+
+                            Button {
+                                appState.deleteAutomation(automation)
+                            } label: {
+                                Image(systemName: "trash")
+                                    .font(.system(size: 11, weight: .bold))
+                                    .foregroundStyle(Color.red)
+                                    .frame(width: 26, height: 26)
+                            }
+                            .liquidGlassButtonStyle()
+                        }
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 7)
+                        .liquidGlassSurface(radius: 14)
+                    }
+                }
+
+                if isAddingAutomation {
+                    AutomationEditor(isPresented: $isAddingAutomation) { automation in
+                        appState.saveAutomation(automation)
+                    }
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+                }
+
+                if !isAddingAutomation {
+                    Button { isAddingAutomation = true } label: {
+                        Label("Nouvelle automation", systemImage: "plus.circle.fill")
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 38)
+                    }
+                    .liquidGlassButtonStyle(prominent: appState.licenseState.entitlements.canUseAutomations)
+                    .disabled(!appState.licenseState.entitlements.canUseAutomations || appState.isBusy)
+                    .overlay {
+                        if !appState.licenseState.entitlements.canUseAutomations {
+                            HStack {
+                                Spacer()
+                                Label("Premium", systemImage: "crown.fill")
+                                    .font(.system(size: 10, weight: .bold))
+                                    .foregroundStyle(Color.yellow)
+                                    .padding(.trailing, 12)
+                            }
+                        }
+                    }
+                }
+            }
+            .animation(.spring(response: 0.28, dampingFraction: 0.88), value: isAddingAutomation)
+        }
+    }
+
+    // MARK: - Circadian Settings
+
+    private var circadianSettings_: some View {
+        VStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(spacing: 10) {
+                    Image(systemName: "sun.and.horizon.fill")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(Color.orange)
+                        .frame(width: 32, height: 32)
+                        .liquidGlassSurface(radius: 12, tint: Color.orange.opacity(0.10))
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Éclairage adaptatif")
+                            .font(.system(size: 13, weight: .semibold))
+                        Text("Ajuste automatiquement la luminosité et la température selon l'heure.")
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundStyle(muted)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    Spacer()
+                    Toggle("", isOn: Binding(
+                        get: { appState.circadianSettings.isEnabled },
+                        set: { v in Task { await appState.setAdaptiveLighting(enabled: v) } }
+                    ))
+                    .labelsHidden()
+                    .toggleStyle(.switch)
+                    .disabled(!appState.licenseState.entitlements.canUseAdaptiveLighting)
+                }
+                .padding(12)
+                .liquidGlassSurface(radius: 16)
+
+                HStack(spacing: 10) {
+                    Toggle("Luminosité", isOn: $appState.circadianSettings.applyBrightness)
+                        .font(.system(size: 12, weight: .semibold))
+                    Spacer()
+                    Toggle("Température", isOn: $appState.circadianSettings.applyTemperature)
+                        .font(.system(size: 12, weight: .semibold))
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .liquidGlassSurface(radius: 14)
+
+                VStack(spacing: 6) {
+                    ForEach(appState.circadianSettings.keyframes.sorted(by: { $0.minuteOfDay < $1.minuteOfDay })) { kf in
+                        HStack(spacing: 12) {
+                            Text(String(format: "%02d:%02d", kf.hour, kf.minute))
+                                .font(.system(size: 12, weight: .semibold).monospaced())
+                                .foregroundStyle(accent)
+                                .frame(width: 44, alignment: .leading)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("\(kf.brightness)% lum.")
+                                    .font(.system(size: 10, weight: .medium))
+                                    .foregroundStyle(LCTheme.muted)
+                                Text("\(kf.temperature) K")
+                                    .font(.system(size: 10, weight: .medium))
+                                    .foregroundStyle(LCTheme.muted)
+                            }
+                            Spacer()
+                            Image(systemName: "circle.fill")
+                                .font(.system(size: 8))
+                                .foregroundStyle(Color(hue: 0, saturation: 0, brightness: Double(kf.brightness) / 100))
+                                .frame(width: 20, height: 20)
+                        }
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .liquidGlassSurface(radius: 12)
+                    }
+                }
+
+                HStack(spacing: 8) {
+                    Button {
+                        Task { await appState.applyCircadianNow() }
+                    } label: {
+                        Label("Appliquer maintenant", systemImage: "sun.and.horizon")
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 38)
+                    }
+                    .liquidGlassButtonStyle(prominent: appState.circadianSettings.isEnabled)
+                    .disabled(!appState.circadianSettings.isEnabled || appState.isBusy)
+
+                    Button {
+                        Task { await appState.saveCircadianSettings(appState.circadianSettings) }
+                    } label: {
+                        Text("Sauvegarder")
+                            .font(.system(size: 13, weight: .semibold))
+                            .frame(width: 100, height: 38)
+                    }
+                    .liquidGlassButtonStyle(prominent: true)
+                    .tint(accent)
+                    .disabled(appState.isBusy)
+                }
+            }
+        }
+    }
+
     // MARK: - Shortcuts Settings
 
     private var shortcutsSettings: some View {
@@ -1115,6 +1344,109 @@ struct SettingsView: View {
     }
 }
 
+// MARK: - AutomationEditor
+
+private struct AutomationEditor: View {
+    @Binding var isPresented: Bool
+    var onSave: (Automation) -> Void
+
+    @State private var name = ""
+    @State private var hour = 22
+    @State private var minute = 0
+    @State private var action: AutomationAction = .powerOffAll
+    @State private var weekdays = Set<Int>()
+
+    private let actions: [AutomationAction] = [
+        .powerOffAll, .powerOnAll,
+        .applyScenePreset(id: "focus"), .applyScenePreset(id: "relax"),
+        .applyScenePreset(id: "neon"),  .applyScenePreset(id: "night"),
+    ]
+    private let dayLabels = ["L", "M", "M", "J", "V", "S", "D"]
+
+    var body: some View {
+        VStack(spacing: 10) {
+            TextField("Nom (ex: Extinction nocturne)", text: $name)
+                .textFieldStyle(.plain)
+                .font(.system(size: 12, weight: .semibold))
+                .autocorrectionDisabled()
+                .padding(.horizontal, 10)
+                .frame(height: 34)
+                .liquidGlassSurface(radius: 12, tint: Color.white.opacity(0.06), interactive: true)
+
+            HStack(spacing: 8) {
+                Stepper(value: $hour, in: 0...23) {
+                    Text(String(format: "H %02d", hour))
+                        .font(.system(size: 12, weight: .semibold).monospaced())
+                        .frame(width: 52)
+                }
+                Stepper(value: $minute, in: 0...59, step: 5) {
+                    Text(String(format: "M %02d", minute))
+                        .font(.system(size: 12, weight: .semibold).monospaced())
+                        .frame(width: 52)
+                }
+            }
+
+            Picker("Action", selection: $action) {
+                ForEach(actions, id: \.title) { a in
+                    Label(a.title, systemImage: a.icon).tag(a)
+                }
+            }
+            .labelsHidden()
+            .pickerStyle(.menu)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(height: 34)
+            .liquidGlassSurface(radius: 12, tint: Color.white.opacity(0.06))
+
+            HStack(spacing: 6) {
+                Text("Jours:")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(LCTheme.muted)
+                ForEach(1...7, id: \.self) { day in
+                    Button {
+                        if weekdays.contains(day) { weekdays.remove(day) }
+                        else { weekdays.insert(day) }
+                    } label: {
+                        Text(dayLabels[day - 1])
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundStyle(weekdays.contains(day) ? Color.white : LCTheme.muted)
+                            .frame(width: 24, height: 24)
+                            .liquidGlassCircle(tint: weekdays.contains(day) ? LCTheme.accent.opacity(0.50) : nil)
+                    }
+                    .buttonStyle(.plain)
+                }
+                Spacer()
+            }
+
+            HStack(spacing: 8) {
+                Button {
+                    let a = Automation(
+                        name: name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? action.title : name.trimmingCharacters(in: .whitespacesAndNewlines),
+                        hour: hour, minute: minute,
+                        weekdays: weekdays, action: action
+                    )
+                    onSave(a)
+                    isPresented = false
+                } label: {
+                    Label("Créer", systemImage: "checkmark")
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 34)
+                }
+                .liquidGlassButtonStyle(prominent: true)
+
+                Button { isPresented = false } label: {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 12, weight: .bold))
+                        .frame(width: 34, height: 34)
+                }
+                .liquidGlassButtonStyle()
+                .foregroundStyle(LCTheme.muted)
+            }
+        }
+        .padding(12)
+        .liquidGlassSurface(radius: 18, tint: Color.white.opacity(0.05))
+    }
+}
+
 private enum SettingsRoute {
     case overview
     case providers
@@ -1126,6 +1458,8 @@ private enum SettingsRoute {
     case nanoleaf
     case wiz
     case shortcuts
+    case automations
+    case circadian
     case devices
     case updates
     case premium
@@ -1140,10 +1474,12 @@ private enum SettingsRoute {
         case .lifx:      "LIFX"
         case .govee:     "Govee"
         case .yeelight:  "Yeelight"
-        case .nanoleaf:  "Nanoleaf"
-        case .wiz:       "WiZ"
-        case .shortcuts: "Raccourcis"
-        case .devices:   "Appareils"
+        case .nanoleaf:    "Nanoleaf"
+        case .wiz:         "WiZ"
+        case .shortcuts:   "Raccourcis"
+        case .automations: "Automations"
+        case .circadian:   "Éclairage adaptatif"
+        case .devices:     "Appareils"
         case .updates:   "Mises à jour"
         case .premium:   "Premium"
         case .about:     "À propos"
@@ -1173,6 +1509,10 @@ private enum SettingsRoute {
             appState.wizSettings.isConfigured ? "\(appState.wizSettings.devices.count) ampoule(s) en LAN" : "Aucune ampoule enregistrée"
         case .shortcuts:
             "Raccourcis ⌥0–⌥4 configurables"
+        case .automations:
+            appState.automations.isEmpty ? "Aucune automation" : "\(appState.automations.filter(\.isEnabled).count)/\(appState.automations.count) actives"
+        case .circadian:
+            appState.circadianSettings.isEnabled ? "Actif — \(appState.circadianSettings.keyframes.count) points de contrôle" : "Désactivé"
         case .devices:
             "\(appState.lamps.count) lampe(s) synchronisée(s)"
         case .updates:
