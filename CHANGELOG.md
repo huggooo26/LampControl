@@ -12,6 +12,19 @@ All notable changes to LampControl are documented here. The format follows
 - HomeKit bridge and automation triggers.
 - Full English UI localization.
 
+## [1.0.10] - 2026-05-02
+
+### Fixed
+
+- Tuya: "Lampe inconnue" error after sync — the internal device cache was
+  keyed by the full prefixed ID (`tuya:XXXXX`) but control actions passed the
+  native ID. Cache is now keyed by `nativeID`, matching what AppState sends.
+- Sparkle update feed URL corrected from the old GitHub username
+  (`huggooo26.github.io`) to `hugoinformatique.github.io`; update checks now
+  resolve correctly.
+- App icon now displayed in Finder/Applications folder; `AppIcon.icns` is
+  embedded in the bundle via `build_app.sh` and referenced in `Info.plist`.
+
 ## [1.0.9] - 2026-05-02
 
 ### Fixed

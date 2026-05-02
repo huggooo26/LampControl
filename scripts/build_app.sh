@@ -37,6 +37,15 @@ mkdir -p "$APP_DIR/Contents/Frameworks"
 cp "$BUILD_DIR/LampControl" "$APP_DIR/Contents/MacOS/LampControl"
 cp "$INFO_PLIST_SRC" "$INFO_PLIST_DST"
 
+# Bundle app icon
+ICON_SRC="$ROOT_DIR/Resources/AppIcon.icns"
+if [[ -f "$ICON_SRC" ]]; then
+  mkdir -p "$APP_DIR/Contents/Resources"
+  cp "$ICON_SRC" "$APP_DIR/Contents/Resources/AppIcon.icns"
+else
+  echo "Avertissement: Resources/AppIcon.icns introuvable — l'icône sera absente du bundle."
+fi
+
 # SwiftPM builds the executable with rpaths pointing into .build/release/
 # (so `swift run` works) but the resulting binary can't find embedded
 # frameworks like Sparkle when copied into a .app bundle. Strip every
