@@ -10,10 +10,12 @@ struct PremiumSettingsView: View {
         VStack(spacing: 12) {
             VStack(spacing: 12) {
                 header
-                infoRow("Lampes", value: licenseState.entitlements.maxLamps.map { "\($0) max" } ?? "Illimitées", icon: "lightbulb.2")
-                premiumFeatureRow("Groupes", isEnabled: licenseState.entitlements.canUseGroups)
-                premiumFeatureRow("Scènes personnalisées", isEnabled: licenseState.entitlements.canUseCustomScenes)
-                premiumFeatureRow("Ambiances rapides", isEnabled: licenseState.entitlements.canUseScenePresets)
+                infoRow("premium.lamps",
+                        value: licenseState.entitlements.maxLamps.map { "\($0) max" } ?? NSLocalizedString("premium.lamps.unlimited", comment: ""),
+                        icon: "lightbulb.2")
+                premiumFeatureRow("premium.groups",        isEnabled: licenseState.entitlements.canUseGroups)
+                premiumFeatureRow("premium.custom.scenes", isEnabled: licenseState.entitlements.canUseCustomScenes)
+                premiumFeatureRow("premium.quick.ambiances", isEnabled: licenseState.entitlements.canUseScenePresets)
             }
             .padding(14)
             .liquidGlassSurface(radius: 22)
@@ -51,7 +53,7 @@ struct PremiumSettingsView: View {
     private var activationCard: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text("Activation")
+                Text("premium.activation")
                     .font(.system(size: 13, weight: .semibold))
 
                 Spacer()
@@ -62,14 +64,14 @@ struct PremiumSettingsView: View {
             }
 
             VStack(alignment: .leading, spacing: 7) {
-                TextField("Clé de licence", text: $licenseKey)
+                TextField("premium.license.key", text: $licenseKey)
                     .textFieldStyle(.plain)
                     .font(.system(size: 12, weight: .medium, design: .monospaced))
                     .padding(.horizontal, 11)
                     .padding(.vertical, 9)
                     .liquidGlassSurface(radius: 12, tint: Color.white.opacity(0.06))
 
-                TextField("Email d'achat", text: $email)
+                TextField("premium.email", text: $email)
                     .textFieldStyle(.plain)
                     .font(.system(size: 12, weight: .medium))
                     .padding(.horizontal, 11)
@@ -88,7 +90,8 @@ struct PremiumSettingsView: View {
                 Button {
                     Task { await appState.activateLicense(licenseKey, email: email) }
                 } label: {
-                    Label(licenseState.tier == .premium ? "Réactiver" : "Activer", systemImage: "checkmark.seal.fill")
+                    Label(licenseState.tier == .premium ? "premium.reactivate" : "premium.activate",
+                          systemImage: "checkmark.seal.fill")
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 9)
                 }
@@ -119,7 +122,7 @@ struct PremiumSettingsView: View {
             Button {
                 appState.openPremiumCheckout()
             } label: {
-                Label("Acheter Premium", systemImage: "cart.fill")
+                Label("premium.buy", systemImage: "cart.fill")
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 9)
             }
@@ -130,7 +133,7 @@ struct PremiumSettingsView: View {
     }
 
     private var earlyAccessNote: some View {
-        Text("Pendant l'Early Access, les fonctionnalités Premium restent actives. La validation Lemon Squeezy est prête, sans secret API dans l'app.")
+        Text("premium.early.access.note")
             .font(.system(size: 11, weight: .medium))
             .foregroundStyle(LCTheme.muted)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -138,7 +141,7 @@ struct PremiumSettingsView: View {
             .fixedSize(horizontal: false, vertical: true)
     }
 
-    private func infoRow(_ title: String, value: String, icon: String) -> some View {
+    private func infoRow(_ titleKey: LocalizedStringKey, value: String, icon: String) -> some View {
         HStack(spacing: 10) {
             Image(systemName: icon)
                 .font(.system(size: 12, weight: .semibold))
@@ -146,7 +149,7 @@ struct PremiumSettingsView: View {
                 .frame(width: 28, height: 28)
                 .liquidGlassSurface(radius: 10)
 
-            Text(title)
+            Text(titleKey)
                 .font(.system(size: 12, weight: .semibold))
 
             Spacer()
@@ -158,7 +161,7 @@ struct PremiumSettingsView: View {
         }
     }
 
-    private func premiumFeatureRow(_ title: String, isEnabled: Bool) -> some View {
+    private func premiumFeatureRow(_ titleKey: LocalizedStringKey, isEnabled: Bool) -> some View {
         HStack(spacing: 10) {
             Image(systemName: isEnabled ? "checkmark.seal.fill" : "lock.fill")
                 .font(.system(size: 12, weight: .semibold))
@@ -166,12 +169,12 @@ struct PremiumSettingsView: View {
                 .frame(width: 28, height: 28)
                 .liquidGlassSurface(radius: 10, tint: isEnabled ? Color.green.opacity(0.08) : nil)
 
-            Text(title)
+            Text(titleKey)
                 .font(.system(size: 12, weight: .semibold))
 
             Spacer()
 
-            Text(isEnabled ? "Actif" : "Premium")
+            Text(isEnabled ? "premium.active" : "premium.locked")
                 .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(LCTheme.muted)
         }

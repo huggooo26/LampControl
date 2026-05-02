@@ -7,9 +7,9 @@ enum LicenseTier: String, Codable {
 
     var title: String {
         switch self {
-        case .free: "Gratuit"
-        case .earlyAccess: "Early Access"
-        case .premium: "Premium"
+        case .free:        return L10n.licenseFree
+        case .earlyAccess: return L10n.licenseEarlyAccess
+        case .premium:     return L10n.licensePremium
         }
     }
 }
@@ -19,7 +19,7 @@ enum LicenseProvider: String, Codable {
 
     var title: String {
         switch self {
-        case .lemonSqueezy: "Lemon Squeezy"
+        case .lemonSqueezy: return "Lemon Squeezy"
         }
     }
 }
@@ -98,50 +98,33 @@ struct LicenseState: Codable, Equatable {
     }
 
     static let earlyAccess = LicenseState(
-        tier: .earlyAccess,
-        provider: .lemonSqueezy,
-        licenseKey: nil,
-        instanceID: nil,
-        instanceName: nil,
-        customerEmail: nil,
-        productName: nil,
-        activatedAt: Date(),
-        validatedAt: nil
+        tier: .earlyAccess, provider: .lemonSqueezy,
+        licenseKey: nil, instanceID: nil, instanceName: nil,
+        customerEmail: nil, productName: nil,
+        activatedAt: Date(), validatedAt: nil
     )
 
     static let free = LicenseState(
-        tier: .free,
-        provider: .lemonSqueezy,
-        licenseKey: nil,
-        instanceID: nil,
-        instanceName: nil,
-        customerEmail: nil,
-        productName: nil,
-        activatedAt: nil,
-        validatedAt: nil
+        tier: .free, provider: .lemonSqueezy,
+        licenseKey: nil, instanceID: nil, instanceName: nil,
+        customerEmail: nil, productName: nil,
+        activatedAt: nil, validatedAt: nil
     )
 
-    var isPremiumEnabled: Bool {
-        tier == .earlyAccess || tier == .premium
-    }
+    var isPremiumEnabled: Bool { tier == .earlyAccess || tier == .premium }
 
-    var entitlements: LicenseEntitlements {
-        isPremiumEnabled ? .premium : .free
-    }
+    var entitlements: LicenseEntitlements { isPremiumEnabled ? .premium : .free }
 
     var statusText: String {
         switch tier {
-        case .free:
-            "Fonctionnalités de base"
-        case .earlyAccess:
-            "Premium actif pendant la bêta"
-        case .premium:
-            "Licence active"
+        case .free:        return L10n.licenseStatusFree
+        case .earlyAccess: return L10n.licenseStatusEarlyAccess
+        case .premium:     return L10n.licenseStatusPremium
         }
     }
 
     var maskedLicenseKey: String {
-        guard let licenseKey, licenseKey.count > 8 else { return "Non connectée" }
+        guard let licenseKey, licenseKey.count > 8 else { return L10n.licenseNone }
         return "\(licenseKey.prefix(4))...\(licenseKey.suffix(4))"
     }
 }

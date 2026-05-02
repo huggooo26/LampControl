@@ -8,6 +8,37 @@ All notable changes to LampControl are documented here. The format follows
 
 ### Planned
 
+## [1.1.0] - 2026-05-02
+
+### Added
+
+- **Full internationalization (i18n)** — LampControl is now available in English,
+  French, and Spanish. The app automatically detects the macOS system language and
+  switches accordingly. Falls back to English if the system language is unsupported.
+- `Sources/LampControl/Resources/en.lproj/Localizable.strings` — 120+ English
+  translation keys.
+- `Sources/LampControl/Resources/fr.lproj/Localizable.strings` — French translations
+  (app native language, full coverage).
+- `Sources/LampControl/Resources/es.lproj/Localizable.strings` — Spanish translations.
+- `Sources/LampControl/L10n.swift` — helper namespace for dynamic/format strings
+  (`L10n.syncTime(_:)`, `L10n.hiddenLamps(_:)`, day-of-week arrays, etc.).
+- `Info.plist`: `CFBundleLocalizations` declares `en`, `fr`, `es`.
+- `Package.swift`: `defaultLocalization: "en"` and `resources: [.process("Resources")]`.
+- `scripts/build_app.sh`: automatically copies `.lproj` directories into the app
+  bundle's `Contents/Resources/` at packaging time.
+
+### Changed
+
+- All user-visible strings in `LampsView`, `ControlCenterView`, `OnboardingOverlay`,
+  `SettingsView`, and `PremiumSettingsView` replaced with localization keys.
+- `AutomationAction.title`, `Automation.weekdaysLabel`, `ShortcutAction.title`,
+  `LicenseTier.title`, `LicenseState.statusText`, and `LightScenePreset.presets`
+  now return localized strings via `L10n`.
+- Context menu items in `AppDelegate` (`Open`, `Check for Updates`, `About`, `Quit`)
+  are now localized.
+- Scene preset title "Nuit" is now "Night" (EN) / "Noche" (ES) in their respective
+  locales.
+
 ## [1.0.15] - 2026-05-02
 
 ### Changed

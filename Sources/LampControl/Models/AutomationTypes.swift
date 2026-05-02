@@ -10,12 +10,12 @@ enum AutomationAction: Codable, Equatable, Hashable {
 
     var title: String {
         switch self {
-        case .powerOffAll:              return "Éteindre tout"
-        case .powerOnAll:               return "Allumer tout"
-        case .applyScenePreset(let id): return "Scène \(id.capitalized)"
-        case .applyProfile:             return "Appliquer un profil"
-        case .enableAdaptiveLighting:   return "Activer l'éclairage adaptatif"
-        case .disableAdaptiveLighting:  return "Désactiver l'éclairage adaptatif"
+        case .powerOffAll:              return L10n.actionPowerOff
+        case .powerOnAll:               return L10n.actionPowerOn
+        case .applyScenePreset(let id): return L10n.actionScene(id.capitalized)
+        case .applyProfile:             return L10n.actionApplyProfile
+        case .enableAdaptiveLighting:   return L10n.actionEnableAdaptive
+        case .disableAdaptiveLighting:  return L10n.actionDisableAdaptive
         }
     }
 
@@ -46,9 +46,8 @@ struct Automation: Codable, Identifiable {
     }
 
     var weekdaysLabel: String {
-        if weekdays.isEmpty { return "Chaque jour" }
-        let names = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"]
-        return weekdays.sorted().compactMap { names[safe: $0 - 1] }.joined(separator: ", ")
+        if weekdays.isEmpty { return L10n.everyDay }
+        return weekdays.sorted().compactMap { L10n.dayNames[safe: $0 - 1] }.joined(separator: ", ")
     }
 
     func shouldFire(at date: Date, calendar: Calendar) -> Bool {
@@ -56,7 +55,6 @@ struct Automation: Codable, Identifiable {
         let comps = calendar.dateComponents([.hour, .minute, .weekday], from: date)
         guard comps.hour == hour, comps.minute == minute else { return false }
         if !weekdays.isEmpty {
-            // Calendar weekday: 1=Sun, 2=Mon … 7=Sat → convert to 1=Mon … 7=Sun
             let wd = ((comps.weekday ?? 1) + 5) % 7 + 1
             guard weekdays.contains(wd) else { return false }
         }

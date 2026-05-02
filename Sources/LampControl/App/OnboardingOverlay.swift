@@ -22,7 +22,7 @@ struct OnboardingOverlay: View {
             .frame(maxWidth: 380)
             .liquidGlassSurface(radius: 24, tint: Color.white.opacity(0.08))
 
-            Button("Fermer") { appState.dismissOnboarding() }
+            Button("onboarding.close") { appState.dismissOnboarding() }
                 .keyboardShortcut(.escape, modifiers: [])
                 .frame(width: 0, height: 0)
                 .opacity(0)
@@ -38,9 +38,9 @@ struct OnboardingOverlay: View {
                 .liquidGlassSurface(radius: 15, tint: Color.blue.opacity(0.10))
 
             VStack(alignment: .leading, spacing: 2) {
-                Text("Configurer LampControl")
+                Text("onboarding.title")
                     .font(.system(size: 17, weight: .semibold))
-                Text("Trois infos Tuya suffisent pour démarrer.")
+                Text("onboarding.subtitle")
                     .font(.system(size: 11, weight: .medium))
                     .foregroundStyle(LCTheme.muted)
             }
@@ -51,9 +51,21 @@ struct OnboardingOverlay: View {
 
     private var steps: some View {
         VStack(spacing: 8) {
-            OnboardingStepRow(number: "1", title: "Créer ou ouvrir le projet Tuya", detail: "Smart Life doit être lié au projet Cloud.")
-            OnboardingStepRow(number: "2", title: "Coller Access ID, Secret et UID", detail: "Le Secret reste stocké dans le Keychain.")
-            OnboardingStepRow(number: "3", title: "Tester la synchronisation", detail: "LampControl détecte ensuite les lampes compatibles.")
+            OnboardingStepRow(
+                number: "1",
+                titleKey: "onboarding.step1.title",
+                detailKey: "onboarding.step1.detail"
+            )
+            OnboardingStepRow(
+                number: "2",
+                titleKey: "onboarding.step2.title",
+                detailKey: "onboarding.step2.detail"
+            )
+            OnboardingStepRow(
+                number: "3",
+                titleKey: "onboarding.step3.title",
+                detailKey: "onboarding.step3.detail"
+            )
         }
     }
 
@@ -62,7 +74,7 @@ struct OnboardingOverlay: View {
             Button {
                 appState.openOnboardingSettings()
             } label: {
-                Label("Configurer", systemImage: "gearshape.fill")
+                Label("onboarding.configure", systemImage: "gearshape.fill")
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(Color.white)
                     .frame(maxWidth: .infinity)
@@ -79,7 +91,7 @@ struct OnboardingOverlay: View {
                     .frame(width: 38, height: 38)
             }
             .liquidGlassButtonStyle()
-            .help("Ouvrir le guide")
+            .help("onboarding.guide")
 
             Button {
                 appState.dismissOnboarding()
@@ -90,15 +102,15 @@ struct OnboardingOverlay: View {
                     .frame(width: 38, height: 38)
             }
             .liquidGlassButtonStyle()
-            .help("Masquer")
+            .help("onboarding.dismiss")
         }
     }
 }
 
 private struct OnboardingStepRow: View {
     let number: String
-    let title: String
-    let detail: String
+    let titleKey: LocalizedStringKey
+    let detailKey: LocalizedStringKey
 
     var body: some View {
         HStack(spacing: 10) {
@@ -109,10 +121,10 @@ private struct OnboardingStepRow: View {
                 .background(LCTheme.accent.opacity(0.15), in: Circle())
 
             VStack(alignment: .leading, spacing: 1) {
-                Text(title)
+                Text(titleKey)
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(LCTheme.ink)
-                Text(detail)
+                Text(detailKey)
                     .font(.system(size: 10, weight: .medium))
                     .foregroundStyle(LCTheme.muted)
                     .fixedSize(horizontal: false, vertical: true)

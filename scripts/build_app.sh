@@ -46,6 +46,17 @@ else
   echo "Avertissement: Resources/AppIcon.icns introuvable — l'icône sera absente du bundle."
 fi
 
+# Bundle localizations (.lproj directories)
+LPROJ_SRC="$ROOT_DIR/Sources/LampControl/Resources"
+if [[ -d "$LPROJ_SRC" ]]; then
+  mkdir -p "$APP_DIR/Contents/Resources"
+  for lproj in "$LPROJ_SRC"/*.lproj; do
+    if [[ -d "$lproj" ]]; then
+      cp -R "$lproj" "$APP_DIR/Contents/Resources/"
+    fi
+  done
+fi
+
 # SwiftPM builds the executable with rpaths pointing into .build/release/
 # (so `swift run` works) but the resulting binary can't find embedded
 # frameworks like Sparkle when copied into a .app bundle. Strip every

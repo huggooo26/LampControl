@@ -4,6 +4,7 @@ import PackageDescription
 
 let package = Package(
     name: "LampControl",
+    defaultLocalization: "en",
     platforms: [
         .macOS(.v13)
     ],
@@ -19,7 +20,10 @@ let package = Package(
             dependencies: [
                 .product(name: "Sparkle", package: "Sparkle")
             ],
-            path: "Sources/LampControl"
+            path: "Sources/LampControl",
+            resources: [
+                .process("Resources")
+            ]
         )
     ]
 )

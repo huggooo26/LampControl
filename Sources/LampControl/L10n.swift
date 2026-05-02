@@ -1,0 +1,205 @@
+import Foundation
+
+/// Localization helpers for dynamic strings (format strings, computed model strings).
+/// Static SwiftUI `Text("key")` / `.help("key")` calls look up keys automatically.
+enum L10n {
+
+    // MARK: - LampsView dynamic strings
+
+    static func syncTime(_ time: String) -> String {
+        String(format: NSLocalizedString("lamps.sync.time", comment: ""), time)
+    }
+
+    static func hiddenLamps(_ count: Int) -> String {
+        String(format: NSLocalizedString("lamps.hidden.count", comment: ""), count)
+    }
+
+    static func onlineLamps(_ count: Int) -> String {
+        String(format: NSLocalizedString("lamps.online.count", comment: ""), count)
+    }
+
+    static func captureState(_ count: Int) -> String {
+        String(format: NSLocalizedString("lamps.capture.state", comment: ""), count)
+    }
+
+    static func groupSelected(_ count: Int) -> String {
+        String(format: NSLocalizedString("lamps.group.selected", comment: ""), count)
+    }
+
+    static func sceneApplyPreset(_ title: String) -> String {
+        String(format: NSLocalizedString("lamps.scene.apply.preset", comment: ""), title)
+    }
+
+    static func sceneApplyCapture(_ title: String) -> String {
+        String(format: NSLocalizedString("lamps.scene.apply.capture", comment: ""), title)
+    }
+
+    static func sceneApplyAmbiance(_ title: String) -> String {
+        String(format: NSLocalizedString("lamps.scene.apply.ambiance", comment: ""), title)
+    }
+
+    // MARK: - Sync
+
+    static var syncUpdating: String { NSLocalizedString("lamps.sync.updating", comment: "") }
+    static var syncAuto: String     { NSLocalizedString("lamps.sync.auto", comment: "") }
+    static var syncNever: String    { NSLocalizedString("sync.never", comment: "") }
+
+    // MARK: - Lamp status (computed String properties)
+
+    static var statusOffline: String { NSLocalizedString("lamp.status.offline", comment: "") }
+    static var statusOn: String      { NSLocalizedString("lamp.status.on", comment: "") }
+    static var statusOff: String     { NSLocalizedString("lamp.status.off", comment: "") }
+    static var tempWarm: String      { NSLocalizedString("lamp.temp.warm", comment: "") }
+    static var tempCold: String      { NSLocalizedString("lamp.temp.cold", comment: "") }
+
+    // MARK: - SettingsView dynamic subtitles
+
+    static var routeSettingsActive:     String { NSLocalizedString("route.settings.sub.active", comment: "") }
+    static var routeSettingsRequired:   String { NSLocalizedString("route.settings.sub.required", comment: "") }
+    static var routeProvidersSubtitle:  String { NSLocalizedString("route.providers.subtitle", comment: "") }
+    static var routeTuyaSubtitle:       String { NSLocalizedString("route.tuya.subtitle", comment: "") }
+    static var routeHueConnected:       String { NSLocalizedString("route.hue.sub.connected", comment: "") }
+    static var routeHueDisconnected:    String { NSLocalizedString("route.hue.sub.disconnected", comment: "") }
+    static var routeLifxConnected:      String { NSLocalizedString("route.lifx.sub.connected", comment: "") }
+    static var routeLifxDisconnected:   String { NSLocalizedString("route.lifx.sub.disconnected", comment: "") }
+    static var routeGoveeConnected:     String { NSLocalizedString("route.govee.sub.connected", comment: "") }
+    static var routeGoveeDisconnected:  String { NSLocalizedString("route.govee.sub.disconnected", comment: "") }
+    static var routeYeeNone:            String { NSLocalizedString("route.yeelight.sub.none", comment: "") }
+    static var routeNanoleafNone:       String { NSLocalizedString("route.nanoleaf.sub.none", comment: "") }
+    static var routeWizNone:            String { NSLocalizedString("route.wiz.sub.none", comment: "") }
+    static var routeShortcutsSubtitle:  String { NSLocalizedString("route.shortcuts.subtitle", comment: "") }
+    static var routeAutomationsNone:    String { NSLocalizedString("route.automations.sub.none", comment: "") }
+    static var routeCircadianDisabled:  String { NSLocalizedString("route.circadian.sub.disabled", comment: "") }
+    static var routeUpdatesSubtitle:    String { NSLocalizedString("route.updates.subtitle", comment: "") }
+    static var routeAboutSubtitle:      String { NSLocalizedString("route.about.subtitle", comment: "") }
+
+    static func routeYeeConnected(_ count: Int) -> String {
+        String(format: NSLocalizedString("route.yeelight.sub.connected", comment: ""), count)
+    }
+    static func routeNanoleafConnected(_ count: Int) -> String {
+        String(format: NSLocalizedString("route.nanoleaf.sub.connected", comment: ""), count)
+    }
+    static func routeWizConnected(_ count: Int) -> String {
+        String(format: NSLocalizedString("route.wiz.sub.connected", comment: ""), count)
+    }
+    static func routeAutomationsActive(_ active: Int, _ total: Int) -> String {
+        String(format: NSLocalizedString("route.automations.sub.active", comment: ""), active, total)
+    }
+    static func routeCircadianActive(_ count: Int) -> String {
+        String(format: NSLocalizedString("route.circadian.sub.active", comment: ""), count)
+    }
+    static func routeDevices(_ count: Int) -> String {
+        String(format: NSLocalizedString("route.devices.subtitle", comment: ""), count)
+    }
+    static func providersSubtitle(connected: Int, upcoming: Int) -> String {
+        String(format: NSLocalizedString("providers.subtitle", comment: ""), connected, upcoming)
+    }
+    static func devicesSubtitle(total: Int, online: Int) -> String {
+        String(format: NSLocalizedString("devices.subtitle", comment: ""), total, online)
+    }
+    static func updatesSubtitle(version: String, build: String) -> String {
+        String(format: NSLocalizedString("updates.subtitle", comment: ""), version, build)
+    }
+    static func automationsActive(_ count: Int) -> String {
+        String(format: NSLocalizedString("automations.active.count", comment: ""), count)
+    }
+    static func updatesLastCheck(_ time: String) -> String {
+        String(format: NSLocalizedString("updates.last.check", comment: ""), time)
+    }
+
+    // MARK: - Provider subtitles (for computed strings)
+
+    static var providerConnected:   String { NSLocalizedString("provider.connected", comment: "") }
+    static var providerTuya:        String { NSLocalizedString("provider.tuya", comment: "") }
+    static var providerHue:         String { NSLocalizedString("provider.hue", comment: "") }
+    static var providerLifx:        String { NSLocalizedString("provider.lifx", comment: "") }
+    static var providerGovee:       String { NSLocalizedString("provider.govee", comment: "") }
+    static var providerYeelight:    String { NSLocalizedString("provider.yeelight", comment: "") }
+    static var providerNanoleaf:    String { NSLocalizedString("provider.nanoleaf", comment: "") }
+    static var providerWiz:         String { NSLocalizedString("provider.wiz", comment: "") }
+
+    // MARK: - Providers with count
+
+    static func yeeConnected(_ count: Int) -> String {
+        String(format: NSLocalizedString("yeelight.connected.count", comment: ""), count)
+    }
+    static func nanoleafConnected(_ count: Int) -> String {
+        String(format: NSLocalizedString("nanoleaf.connected.count", comment: ""), count)
+    }
+    static func wizConnected(_ count: Int) -> String {
+        String(format: NSLocalizedString("wiz.connected.count", comment: ""), count)
+    }
+
+    // MARK: - License / Premium
+
+    static var licenseFree:              String { NSLocalizedString("license.free", comment: "") }
+    static var licensePremium:           String { NSLocalizedString("license.premium", comment: "") }
+    static var licenseEarlyAccess:       String { NSLocalizedString("license.early.access", comment: "") }
+    static var licenseStatusFree:        String { NSLocalizedString("license.status.free", comment: "") }
+    static var licenseStatusEarlyAccess: String { NSLocalizedString("license.status.early.access", comment: "") }
+    static var licenseStatusPremium:     String { NSLocalizedString("license.status.premium", comment: "") }
+    static var licenseNone:              String { NSLocalizedString("license.none", comment: "") }
+
+    // MARK: - Automation actions
+
+    static var actionPowerOff:       String { NSLocalizedString("action.power.off.all", comment: "") }
+    static var actionPowerOn:        String { NSLocalizedString("action.power.on.all", comment: "") }
+    static var actionApplyProfile:   String { NSLocalizedString("action.apply.profile", comment: "") }
+    static var actionEnableAdaptive: String { NSLocalizedString("action.enable.adaptive", comment: "") }
+    static var actionDisableAdaptive:String { NSLocalizedString("action.disable.adaptive", comment: "") }
+
+    static func actionScene(_ name: String) -> String {
+        String(format: NSLocalizedString("action.scene", comment: ""), name)
+    }
+
+    // MARK: - Shortcut actions
+
+    static var shortcutPowerOff: String { NSLocalizedString("shortcut.power.off.all", comment: "") }
+    static var shortcutPowerOn:  String { NSLocalizedString("shortcut.power.on.all", comment: "") }
+    static var shortcutFocus:    String { NSLocalizedString("shortcut.scene.focus", comment: "") }
+    static var shortcutRelax:    String { NSLocalizedString("shortcut.scene.relax", comment: "") }
+    static var shortcutNeon:     String { NSLocalizedString("shortcut.scene.neon", comment: "") }
+    static var shortcutNight:    String { NSLocalizedString("shortcut.scene.night", comment: "") }
+
+    // MARK: - Scene presets
+
+    static var sceneNight: String { NSLocalizedString("scene.night", comment: "") }
+
+    // MARK: - Automation weekdays
+
+    static var everyDay: String { NSLocalizedString("automation.everyday", comment: "") }
+
+    static var dayLetters: [String] {
+        [
+            NSLocalizedString("day.mon.letter", comment: ""),
+            NSLocalizedString("day.tue.letter", comment: ""),
+            NSLocalizedString("day.wed.letter", comment: ""),
+            NSLocalizedString("day.thu.letter", comment: ""),
+            NSLocalizedString("day.fri.letter", comment: ""),
+            NSLocalizedString("day.sat.letter", comment: ""),
+            NSLocalizedString("day.sun.letter", comment: "")
+        ]
+    }
+
+    static var dayNames: [String] {
+        [
+            NSLocalizedString("day.mon", comment: ""),
+            NSLocalizedString("day.tue", comment: ""),
+            NSLocalizedString("day.wed", comment: ""),
+            NSLocalizedString("day.thu", comment: ""),
+            NSLocalizedString("day.fri", comment: ""),
+            NSLocalizedString("day.sat", comment: ""),
+            NSLocalizedString("day.sun", comment: "")
+        ]
+    }
+
+    // MARK: - App context menu
+
+    static var menuOpen: String { NSLocalizedString("menu.open", comment: "") }
+    static var menuCheckUpdates: String { NSLocalizedString("menu.check.updates", comment: "") }
+    static var menuQuit: String { NSLocalizedString("menu.quit", comment: "") }
+
+    static func menuAbout(version: String) -> String {
+        String(format: NSLocalizedString("menu.about", comment: ""), version)
+    }
+}

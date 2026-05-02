@@ -34,38 +34,22 @@ struct SettingsView: View {
             ScrollView {
                 Group {
                     switch route {
-                    case .overview:
-                        overview
-                    case .providers:
-                        providersSettings
-                    case .tuya:
-                        tuyaSettings
-                    case .hue:
-                        hueSettings
-                    case .lifx:
-                        lifxSettings
-                    case .govee:
-                        goveeSettings
-                    case .yeelight:
-                        yeelightSettings
-                    case .nanoleaf:
-                        nanoleafSettings
-                    case .wiz:
-                        wizSettings
-                    case .shortcuts:
-                        shortcutsSettings
-                    case .automations:
-                        automationsSettings
-                    case .circadian:
-                        circadianSettings_
-                    case .devices:
-                        devicesSettings
-                    case .updates:
-                        updatesSettings
-                    case .premium:
-                        PremiumSettingsView(licenseState: appState.licenseState)
-                    case .about:
-                        aboutSettings
+                    case .overview:    overview
+                    case .providers:   providersSettings
+                    case .tuya:        tuyaSettings
+                    case .hue:         hueSettings
+                    case .lifx:        lifxSettings
+                    case .govee:       goveeSettings
+                    case .yeelight:    yeelightSettings
+                    case .nanoleaf:    nanoleafSettings
+                    case .wiz:         wizSettings
+                    case .shortcuts:   shortcutsSettings
+                    case .automations: automationsSettings
+                    case .circadian:   circadianSettings_
+                    case .devices:     devicesSettings
+                    case .updates:     updatesSettings
+                    case .premium:     PremiumSettingsView(licenseState: appState.licenseState)
+                    case .about:       aboutSettings
                     }
                 }
                 .padding(.bottom, 4)
@@ -89,7 +73,7 @@ struct SettingsView: View {
                         .frame(width: 34, height: 34)
                 }
                 .liquidGlassButtonStyle()
-                .help("Retour")
+                .help("settings.back")
             }
 
             VStack(alignment: .leading, spacing: 2) {
@@ -114,63 +98,78 @@ struct SettingsView: View {
                 settingsLink(
                     .providers,
                     icon: "square.grid.2x2",
-                    title: "Fournisseurs",
-                    subtitle: "\(appState.configuredProviderKinds.count) connecté(s), \(LightProviderKind.allCases.count - appState.configuredProviderKinds.count) à venir",
+                    title: NSLocalizedString("route.providers", comment: ""),
+                    subtitle: L10n.providersSubtitle(
+                        connected: appState.configuredProviderKinds.count,
+                        upcoming: LightProviderKind.allCases.count - appState.configuredProviderKinds.count
+                    ),
                     tint: Color.cyan.opacity(0.10)
                 )
 
                 settingsLink(
                     .tuya,
                     icon: "lock.shield",
-                    title: "Compte Tuya",
-                    subtitle: appState.hasSecret ? "Secret stocké dans le Keychain" : "Identifiants requis",
+                    title: NSLocalizedString("route.tuya", comment: ""),
+                    subtitle: appState.hasSecret
+                        ? NSLocalizedString("tuya.secret.stored", comment: "")
+                        : NSLocalizedString("tuya.cred.required", comment: ""),
                     tint: appState.canSync ? Color.green.opacity(0.12) : Color.orange.opacity(0.12)
                 )
 
                 settingsLink(
                     .shortcuts,
                     icon: "keyboard",
-                    title: "Raccourcis clavier",
-                    subtitle: "⌥0 Éteindre · ⌥1-⌥4 Scènes",
+                    title: NSLocalizedString("route.shortcuts", comment: ""),
+                    subtitle: NSLocalizedString("shortcuts.subtitle", comment: ""),
                     tint: Color.purple.opacity(0.10)
                 )
 
                 settingsLink(
                     .automations,
                     icon: "clock.badge.checkmark.fill",
-                    title: "Automations",
-                    subtitle: appState.automations.isEmpty ? "Planifiez vos lampes" : "\(appState.automations.filter(\.isEnabled).count) active(s)",
+                    title: NSLocalizedString("route.automations", comment: ""),
+                    subtitle: appState.automations.isEmpty
+                        ? NSLocalizedString("automations.empty", comment: "")
+                        : L10n.automationsActive(appState.automations.filter(\.isEnabled).count),
                     tint: Color.green.opacity(0.10)
                 )
 
                 settingsLink(
                     .circadian,
                     icon: "sun.and.horizon.fill",
-                    title: "Éclairage adaptatif",
-                    subtitle: appState.circadianSettings.isEnabled ? "Actif" : "Ajuste temp. selon l'heure",
+                    title: NSLocalizedString("route.circadian", comment: ""),
+                    subtitle: appState.circadianSettings.isEnabled
+                        ? NSLocalizedString("circadian.subtitle.active", comment: "")
+                        : NSLocalizedString("circadian.subtitle.inactive", comment: ""),
                     tint: Color.orange.opacity(0.10)
                 )
 
                 settingsLink(
                     .devices,
                     icon: "lightbulb.2",
-                    title: "Appareils",
-                    subtitle: "\(appState.lamps.count) lampe(s), \(appState.lamps.filter(\.online).count) en ligne",
+                    title: NSLocalizedString("route.devices", comment: ""),
+                    subtitle: L10n.devicesSubtitle(
+                        total: appState.lamps.count,
+                        online: appState.lamps.filter(\.online).count
+                    ),
                     tint: Color.blue.opacity(0.10)
                 )
 
                 settingsLink(
                     .updates,
                     icon: "arrow.down.circle",
-                    title: "Mises à jour",
-                    subtitle: "Version \(appState.updateService.currentVersion) (build \(appState.updateService.currentBuild))",
+                    title: NSLocalizedString("route.updates", comment: ""),
+                    subtitle: L10n.updatesSubtitle(
+                        version: appState.updateService.currentVersion,
+                        build: appState.updateService.currentBuild
+                    ),
                     tint: Color.purple.opacity(0.10)
                 )
 
                 settingsLink(
                     .premium,
                     icon: "crown.fill",
-                    title: "Premium",
+                    title: NSLocalizedString("route.premium", comment: ""),
                     subtitle: "\(appState.licenseState.tier.title) - \(appState.licenseState.statusText)",
                     tint: Color.yellow.opacity(0.12)
                 )
@@ -178,8 +177,8 @@ struct SettingsView: View {
                 settingsLink(
                     .about,
                     icon: "info.circle",
-                    title: "À propos",
-                    subtitle: "LampControl et diagnostics",
+                    title: NSLocalizedString("route.about", comment: ""),
+                    subtitle: NSLocalizedString("about.subtitle", comment: ""),
                     tint: Color.gray.opacity(0.10)
                 )
             }
@@ -245,18 +244,15 @@ struct SettingsView: View {
     }
 
     private func providerSubtitle(_ provider: LightProviderKind, isConfigured: Bool) -> String {
-        if isConfigured {
-            return "Connecté et utilisé pour la synchronisation"
-        }
-
+        if isConfigured { return L10n.providerConnected }
         switch provider {
-        case .tuya:       return "Compte Smart Life / Tuya Cloud"
-        case .philipsHue: return "Bridge Hue local (LAN)"
-        case .lifx:       return "Token LIFX Cloud"
-        case .govee:      return "Clé API Govee Developer"
-        case .yeelight:   return "Lampes en LAN (mode développeur)"
-        case .nanoleaf:   return "Panneaux lumineux en LAN"
-        case .wiz:        return "Ampoules WiZ en LAN (Signify)"
+        case .tuya:       return L10n.providerTuya
+        case .philipsHue: return L10n.providerHue
+        case .lifx:       return L10n.providerLifx
+        case .govee:      return L10n.providerGovee
+        case .yeelight:   return L10n.providerYeelight
+        case .nanoleaf:   return L10n.providerNanoleaf
+        case .wiz:        return L10n.providerWiz
         }
     }
 
@@ -283,9 +279,9 @@ struct SettingsView: View {
                         .liquidGlassSurface(radius: 12, tint: appState.hueSettings.isConfigured ? Color.green.opacity(0.10) : Color.blue.opacity(0.08))
 
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(appState.hueSettings.isConfigured ? "Philips Hue connecté" : "Connecter un bridge Hue")
+                        Text(appState.hueSettings.isConfigured ? "hue.connected" : "hue.connect")
                             .font(.system(size: 13, weight: .semibold))
-                        Text(appState.hueSettings.bridgeIP.isEmpty ? "Détectez le bridge, appuyez sur son bouton, puis connectez." : appState.hueSettings.bridgeIP)
+                        Text(appState.hueSettings.bridgeIP.isEmpty ? "hue.bridge.detect.hint" : appState.hueSettings.bridgeIP)
                             .font(.system(size: 10, weight: .medium))
                             .foregroundStyle(muted)
                     }
@@ -296,7 +292,7 @@ struct SettingsView: View {
                 Button {
                     Task { await appState.discoverHueBridges() }
                 } label: {
-                    Label("Détecter les bridges", systemImage: "magnifyingglass")
+                    Label("hue.bridge.detect.button", systemImage: "magnifyingglass")
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 9)
                 }
@@ -336,22 +332,19 @@ struct SettingsView: View {
             }
 
             VStack(alignment: .leading, spacing: 10) {
-                formField("IP du bridge", text: $appState.hueSettings.bridgeIP, icon: "network")
+                formField("hue.bridge.ip", text: $appState.hueSettings.bridgeIP, icon: "network")
 
                 Button {
                     Task { await appState.pairHueBridge() }
                 } label: {
-                    Label(appState.hueSettings.isConfigured ? "Reconnecter Hue" : "Connecter Hue", systemImage: "link")
+                    Label(appState.hueSettings.isConfigured ? "hue.reconnect" : "hue.connect.button", systemImage: "link")
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 9)
                 }
                 .liquidGlassButtonStyle(prominent: true)
                 .disabled(appState.isBusy || appState.hueSettings.bridgeIP.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
 
-                Text("Avant de connecter, appuyez sur le bouton physique du bridge Hue. LampControl recevra une clé locale stockée dans le Keychain.")
-                    .font(.system(size: 10, weight: .medium))
-                    .foregroundStyle(muted)
-                    .fixedSize(horizontal: false, vertical: true)
+                hint("hue.hint")
             }
             .padding(14)
             .liquidGlassSurface(radius: 22)
@@ -369,9 +362,9 @@ struct SettingsView: View {
                         .liquidGlassSurface(radius: 12, tint: appState.lifxSettings.isConfigured ? Color.green.opacity(0.10) : Color.blue.opacity(0.08))
 
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(appState.lifxSettings.isConfigured ? "LIFX connecté" : "Connecter LIFX Cloud")
+                        Text(appState.lifxSettings.isConfigured ? "lifx.connected" : "lifx.connect")
                             .font(.system(size: 13, weight: .semibold))
-                        Text("Collez un token personnel LIFX pour synchroniser vos lampes.")
+                        Text("lifx.token.hint")
                             .font(.system(size: 10, weight: .medium))
                             .foregroundStyle(muted)
                     }
@@ -379,7 +372,7 @@ struct SettingsView: View {
                     Spacer()
                 }
 
-                SecureField(appState.lifxSettings.isConfigured ? "Token LIFX enregistré" : "Token LIFX", text: $appState.lifxSettings.token)
+                SecureField(appState.lifxSettings.isConfigured ? "lifx.token.saved" : "lifx.token.placeholder", text: $appState.lifxSettings.token)
                     .textFieldStyle(.plain)
                     .foregroundStyle(ink)
                     .autocorrectionDisabled()
@@ -390,17 +383,14 @@ struct SettingsView: View {
                 Button {
                     Task { await appState.saveLifxSettingsAndSync() }
                 } label: {
-                    Label("Enregistrer et synchroniser", systemImage: "bolt.badge.checkmark")
+                    Label("lifx.save", systemImage: "bolt.badge.checkmark")
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 9)
                 }
                 .liquidGlassButtonStyle(prominent: true)
                 .disabled(appState.isBusy || appState.lifxSettings.token.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
 
-                Text("Créez le token dans votre compte LIFX Cloud, puis collez-le ici. Il est stocké localement dans le Keychain macOS.")
-                    .font(.system(size: 10, weight: .medium))
-                    .foregroundStyle(muted)
-                    .fixedSize(horizontal: false, vertical: true)
+                hint("lifx.hint")
             }
             .padding(14)
             .liquidGlassSurface(radius: 22)
@@ -418,9 +408,9 @@ struct SettingsView: View {
                         .liquidGlassSurface(radius: 12, tint: appState.goveeSettings.isConfigured ? Color.green.opacity(0.10) : Color.purple.opacity(0.08))
 
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(appState.goveeSettings.isConfigured ? "Govee connecté" : "Connecter Govee Cloud")
+                        Text(appState.goveeSettings.isConfigured ? "govee.connected" : "govee.connect")
                             .font(.system(size: 13, weight: .semibold))
-                        Text("Demandez une clé API depuis l'app Govee Home (\u{2261} → À propos → Apply for API Key).")
+                        Text("govee.hint")
                             .font(.system(size: 10, weight: .medium))
                             .foregroundStyle(muted)
                     }
@@ -428,7 +418,7 @@ struct SettingsView: View {
                     Spacer()
                 }
 
-                SecureField(appState.goveeSettings.isConfigured ? "Clé API enregistrée" : "Clé API Govee", text: $appState.goveeSettings.apiKey)
+                SecureField(appState.goveeSettings.isConfigured ? "govee.apikey.saved" : "govee.apikey.placeholder", text: $appState.goveeSettings.apiKey)
                     .textFieldStyle(.plain)
                     .foregroundStyle(ink)
                     .autocorrectionDisabled()
@@ -439,17 +429,14 @@ struct SettingsView: View {
                 Button {
                     Task { await appState.saveGoveeSettingsAndSync() }
                 } label: {
-                    Label("Enregistrer et synchroniser", systemImage: "bolt.badge.checkmark")
+                    Label("govee.save", systemImage: "bolt.badge.checkmark")
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 9)
                 }
                 .liquidGlassButtonStyle(prominent: true)
                 .disabled(appState.isBusy || appState.goveeSettings.apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
 
-                Text("La clé est envoyée par e-mail par Govee. Limite de 60 requêtes/minute. Stockée localement dans le Keychain macOS.")
-                    .font(.system(size: 10, weight: .medium))
-                    .foregroundStyle(muted)
-                    .fixedSize(horizontal: false, vertical: true)
+                hint("govee.apikey.hint")
             }
             .padding(14)
             .liquidGlassSurface(radius: 22)
@@ -467,9 +454,11 @@ struct SettingsView: View {
                         .liquidGlassSurface(radius: 12, tint: appState.yeelightSettings.isConfigured ? Color.green.opacity(0.10) : Color.orange.opacity(0.08))
 
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(appState.yeelightSettings.isConfigured ? "\(appState.yeelightSettings.bulbs.count) lampe(s) Yeelight" : "Ajouter une lampe Yeelight")
+                        Text(appState.yeelightSettings.isConfigured
+                             ? L10n.yeeConnected(appState.yeelightSettings.bulbs.count)
+                             : NSLocalizedString("yeelight.connect", comment: ""))
                             .font(.system(size: 13, weight: .semibold))
-                        Text("Activez « LAN Control » dans l'app Yeelight, puis renseignez l'IP locale de la lampe.")
+                        Text("yeelight.hint")
                             .font(.system(size: 10, weight: .medium))
                             .foregroundStyle(muted)
                     }
@@ -477,8 +466,8 @@ struct SettingsView: View {
                     Spacer()
                 }
 
-                formField("Adresse IP (ex: 192.168.1.42)", text: $newYeelightHost, icon: "network")
-                formField("Nom (optionnel)", text: $newYeelightName, icon: "tag")
+                formField("yeelight.ip.placeholder", text: $newYeelightHost, icon: "network")
+                formField("device.name.placeholder", text: $newYeelightName, icon: "tag")
 
                 Button {
                     Task {
@@ -487,17 +476,14 @@ struct SettingsView: View {
                         newYeelightName = ""
                     }
                 } label: {
-                    Label("Ajouter et synchroniser", systemImage: "plus.circle.fill")
+                    Label("device.add.sync", systemImage: "plus.circle.fill")
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 9)
                 }
                 .liquidGlassButtonStyle(prominent: true)
                 .disabled(appState.isBusy || newYeelightHost.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
 
-                Text("L'IP est visible dans l'app Yeelight (paramètres de la lampe → Informations sur l'appareil). LAN Control doit être activé sur chaque ampoule.")
-                    .font(.system(size: 10, weight: .medium))
-                    .foregroundStyle(muted)
-                    .fixedSize(horizontal: false, vertical: true)
+                hint("yeelight.ip.hint")
             }
             .padding(14)
             .liquidGlassSurface(radius: 22)
@@ -552,9 +538,11 @@ struct SettingsView: View {
                         .liquidGlassSurface(radius: 12, tint: appState.nanoleafSettings.isConfigured ? Color.green.opacity(0.10) : Color.orange.opacity(0.08))
 
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(appState.nanoleafSettings.isConfigured ? "\(appState.nanoleafSettings.devices.count) panneau(x) Nanoleaf" : "Ajouter un panneau Nanoleaf")
+                        Text(appState.nanoleafSettings.isConfigured
+                             ? L10n.nanoleafConnected(appState.nanoleafSettings.devices.count)
+                             : NSLocalizedString("nanoleaf.connect", comment: ""))
                             .font(.system(size: 13, weight: .semibold))
-                        Text("Maintenez le bouton power 5-7s jusqu'au clignotement, puis appuyez sur Appairer.")
+                        Text("nanoleaf.hint")
                             .font(.system(size: 10, weight: .medium))
                             .foregroundStyle(muted)
                             .fixedSize(horizontal: false, vertical: true)
@@ -562,8 +550,8 @@ struct SettingsView: View {
                     Spacer()
                 }
 
-                formField("Adresse IP (ex: 192.168.1.50)", text: $newNanoleafHost, icon: "network")
-                formField("Nom (optionnel)", text: $newNanoleafName, icon: "tag")
+                formField("nanoleaf.ip.placeholder", text: $newNanoleafHost, icon: "network")
+                formField("device.name.placeholder", text: $newNanoleafName, icon: "tag")
 
                 Button {
                     Task {
@@ -572,14 +560,14 @@ struct SettingsView: View {
                         newNanoleafName = ""
                     }
                 } label: {
-                    Label("Appairer et synchroniser", systemImage: "link.badge.plus")
+                    Label("nanoleaf.pair.button", systemImage: "link.badge.plus")
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 9)
                 }
                 .liquidGlassButtonStyle(prominent: true)
                 .disabled(appState.isBusy || newNanoleafHost.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
 
-                hint("Le port par défaut est 16021. Assurez-vous que le panneau est sur le même réseau Wi-Fi.")
+                hint("nanoleaf.ip.hint")
             }
             .padding(14)
             .liquidGlassSurface(radius: 22)
@@ -634,17 +622,19 @@ struct SettingsView: View {
                         .liquidGlassSurface(radius: 12, tint: appState.wizSettings.isConfigured ? Color.green.opacity(0.10) : Color.cyan.opacity(0.08))
 
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(appState.wizSettings.isConfigured ? "\(appState.wizSettings.devices.count) ampoule(s) WiZ" : "Ajouter une ampoule WiZ")
+                        Text(appState.wizSettings.isConfigured
+                             ? L10n.wizConnected(appState.wizSettings.devices.count)
+                             : NSLocalizedString("wiz.connect", comment: ""))
                             .font(.system(size: 13, weight: .semibold))
-                        Text("Ampoules WiZ (Signify) sur le même réseau. Aucune configuration requise.")
+                        Text("wiz.hint")
                             .font(.system(size: 10, weight: .medium))
                             .foregroundStyle(muted)
                     }
                     Spacer()
                 }
 
-                formField("Adresse IP (ex: 192.168.1.55)", text: $newWizHost, icon: "network")
-                formField("Nom (optionnel)", text: $newWizName, icon: "tag")
+                formField("wiz.ip.placeholder", text: $newWizHost, icon: "network")
+                formField("device.name.placeholder", text: $newWizName, icon: "tag")
 
                 Button {
                     Task {
@@ -653,14 +643,14 @@ struct SettingsView: View {
                         newWizName = ""
                     }
                 } label: {
-                    Label("Ajouter et synchroniser", systemImage: "plus.circle.fill")
+                    Label("device.add.sync", systemImage: "plus.circle.fill")
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 9)
                 }
                 .liquidGlassButtonStyle(prominent: true)
                 .disabled(appState.isBusy || newWizHost.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
 
-                hint("L'IP est visible dans l'app WiZ (paramètres de l'ampoule). Port UDP 38899.")
+                hint("wiz.ip.hint")
             }
             .padding(14)
             .liquidGlassSurface(radius: 22)
@@ -714,9 +704,9 @@ struct SettingsView: View {
                         .frame(width: 32, height: 32)
                         .liquidGlassSurface(radius: 12, tint: Color.green.opacity(0.10))
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Automations")
+                        Text("automations.header")
                             .font(.system(size: 13, weight: .semibold))
-                        Text("Déclenchez des actions à heure fixe, chaque jour ou certains jours.")
+                        Text("automations.header.detail")
                             .font(.system(size: 10, weight: .medium))
                             .foregroundStyle(muted)
                             .fixedSize(horizontal: false, vertical: true)
@@ -731,7 +721,7 @@ struct SettingsView: View {
                         Image(systemName: "clock.badge.xmark")
                             .foregroundStyle(muted)
                             .frame(width: 24, height: 24)
-                        Text("Aucune automation. Créez-en une ci-dessous.")
+                        Text("automations.empty.message")
                             .font(.system(size: 11, weight: .medium))
                             .foregroundStyle(muted)
                         Spacer()
@@ -791,7 +781,7 @@ struct SettingsView: View {
 
                 if !isAddingAutomation {
                     Button { isAddingAutomation = true } label: {
-                        Label("Nouvelle automation", systemImage: "plus.circle.fill")
+                        Label("automations.new", systemImage: "plus.circle.fill")
                             .frame(maxWidth: .infinity)
                             .frame(height: 38)
                     }
@@ -826,9 +816,9 @@ struct SettingsView: View {
                         .frame(width: 32, height: 32)
                         .liquidGlassSurface(radius: 12, tint: Color.orange.opacity(0.10))
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Éclairage adaptatif")
+                        Text("circadian.header")
                             .font(.system(size: 13, weight: .semibold))
-                        Text("Ajuste automatiquement la luminosité et la température selon l'heure.")
+                        Text("circadian.detail")
                             .font(.system(size: 10, weight: .medium))
                             .foregroundStyle(muted)
                             .fixedSize(horizontal: false, vertical: true)
@@ -846,10 +836,10 @@ struct SettingsView: View {
                 .liquidGlassSurface(radius: 16)
 
                 HStack(spacing: 10) {
-                    Toggle("Luminosité", isOn: $appState.circadianSettings.applyBrightness)
+                    Toggle("circadian.brightness", isOn: $appState.circadianSettings.applyBrightness)
                         .font(.system(size: 12, weight: .semibold))
                     Spacer()
-                    Toggle("Température", isOn: $appState.circadianSettings.applyTemperature)
+                    Toggle("circadian.temperature", isOn: $appState.circadianSettings.applyTemperature)
                         .font(.system(size: 12, weight: .semibold))
                 }
                 .padding(.horizontal, 12)
@@ -887,7 +877,7 @@ struct SettingsView: View {
                     Button {
                         Task { await appState.applyCircadianNow() }
                     } label: {
-                        Label("Appliquer maintenant", systemImage: "sun.and.horizon")
+                        Label("circadian.apply.now", systemImage: "sun.and.horizon")
                             .frame(maxWidth: .infinity)
                             .frame(height: 38)
                     }
@@ -897,7 +887,7 @@ struct SettingsView: View {
                     Button {
                         Task { await appState.saveCircadianSettings(appState.circadianSettings) }
                     } label: {
-                        Text("Sauvegarder")
+                        Text("action.save")
                             .font(.system(size: 13, weight: .semibold))
                             .frame(width: 100, height: 38)
                     }
@@ -921,9 +911,9 @@ struct SettingsView: View {
                         .frame(width: 32, height: 32)
                         .liquidGlassSurface(radius: 12, tint: Color.purple.opacity(0.10))
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Raccourcis clavier globaux")
+                        Text("shortcuts.header")
                             .font(.system(size: 13, weight: .semibold))
-                        Text("Contrôlez vos lampes sans ouvrir l'app.")
+                        Text("shortcuts.detail")
                             .font(.system(size: 10, weight: .medium))
                             .foregroundStyle(muted)
                     }
@@ -963,7 +953,7 @@ struct SettingsView: View {
                 Button {
                     Task { await appState.saveShortcutSettings() }
                 } label: {
-                    Text("Enregistrer les raccourcis")
+                    Text("shortcuts.save")
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(Color.white)
                         .frame(maxWidth: .infinity)
@@ -992,9 +982,9 @@ struct SettingsView: View {
                 .frame(width: 44, height: 44)
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(isSetupComplete ? "Configuration prête" : "Configuration à compléter")
+                    Text(isSetupComplete ? "setup.complete" : "setup.incomplete")
                         .font(.system(size: 15, weight: .semibold))
-                    Text(isSetupComplete ? "Tuya est prêt pour la synchronisation." : "Ajoutez les informations Tuya manquantes.")
+                    Text(isSetupComplete ? "setup.complete.detail" : "setup.incomplete.detail")
                         .font(.system(size: 11, weight: .medium))
                         .foregroundStyle(muted)
                 }
@@ -1010,7 +1000,7 @@ struct SettingsView: View {
                         .frame(width: 32, height: 32)
                 }
                 .liquidGlassButtonStyle()
-                .help("Ouvrir le guide Tuya")
+                .help("setup.guide")
             }
 
             HStack(spacing: 7) {
@@ -1062,21 +1052,18 @@ struct SettingsView: View {
     private var tuyaSettings: some View {
         VStack(spacing: 12) {
             settingsGroup {
-                formField("Access ID", text: $appState.settings.accessId, icon: "key")
-
+                formField("tuya.access.id", text: $appState.settings.accessId, icon: "key")
                 secureField
-
                 settingsPicker
-
-                formField("Endpoint", text: $appState.settings.endpoint, icon: "network")
-                formField("UID utilisateur", text: $appState.settings.uid, icon: "person.crop.circle")
+                formField("tuya.endpoint", text: $appState.settings.endpoint, icon: "network")
+                formField("tuya.uid", text: $appState.settings.uid, icon: "person.crop.circle")
             }
 
             HStack(spacing: 8) {
                 Button {
                     Task { await appState.saveSettings() }
                 } label: {
-                    Label("Enregistrer", systemImage: "checkmark.seal.fill")
+                    Label("tuya.save", systemImage: "checkmark.seal.fill")
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(Color.white)
                         .frame(maxWidth: .infinity)
@@ -1090,7 +1077,7 @@ struct SettingsView: View {
                 Button {
                     Task { await appState.saveSettingsAndSync() }
                 } label: {
-                    Label("Tester", systemImage: "bolt.badge.checkmark")
+                    Label("tuya.test", systemImage: "bolt.badge.checkmark")
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(isSetupComplete ? Color.white : muted)
                         .frame(width: 108)
@@ -1102,15 +1089,15 @@ struct SettingsView: View {
                 .opacity(appState.isBusy || !isSetupComplete ? 0.55 : 1)
             }
 
-            hint("Liez votre compte Smart Life au projet Cloud Tuya, puis copiez l'UID du compte lié.")
+            hint("tuya.hint")
         }
     }
 
     private var secureField: some View {
         VStack(alignment: .leading, spacing: 6) {
-            fieldLabel("Access Secret", icon: "lock")
+            fieldLabel("tuya.access.secret", icon: "lock")
 
-            SecureField(appState.hasSecret ? "Secret enregistré" : "Access Secret", text: $appState.settings.accessSecret)
+            SecureField(appState.hasSecret ? "tuya.secret.placeholder" : "tuya.access.secret", text: $appState.settings.accessSecret)
                 .textFieldStyle(.plain)
                 .foregroundStyle(ink)
                 .autocorrectionDisabled()
@@ -1122,9 +1109,9 @@ struct SettingsView: View {
 
     private var settingsPicker: some View {
         VStack(alignment: .leading, spacing: 6) {
-            fieldLabel("Région", icon: "globe.europe.africa")
+            fieldLabel("tuya.region", icon: "globe.europe.africa")
 
-            Picker("Région", selection: $appState.settings.region) {
+            Picker("tuya.region", selection: $appState.settings.region) {
                 Text("Europe").tag(TuyaRegion.eu)
                 Text("US West").tag(TuyaRegion.us)
                 Text("US East").tag(TuyaRegion.usEast)
@@ -1147,15 +1134,15 @@ struct SettingsView: View {
     private var devicesSettings: some View {
         VStack(spacing: 12) {
             settingsGroup {
-                infoRow("Lampes détectées", value: "\(appState.lamps.count)", icon: "lightbulb.2")
-                infoRow("En ligne", value: "\(appState.lamps.filter(\.online).count)", icon: "wifi")
-                infoRow("Synchronisation", value: syncSummary, icon: "arrow.triangle.2.circlepath")
+                infoRow("devices.detected", value: "\(appState.lamps.count)", icon: "lightbulb.2")
+                infoRow("devices.online",   value: "\(appState.lamps.filter(\.online).count)", icon: "wifi")
+                infoRow("devices.sync",     value: syncSummary, icon: "arrow.triangle.2.circlepath")
             }
 
             Button {
                 Task { await appState.syncLamps() }
             } label: {
-                Label("Synchroniser maintenant", systemImage: "arrow.clockwise")
+                Label("devices.sync.now", systemImage: "arrow.clockwise")
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(Color.white)
                     .frame(maxWidth: .infinity)
@@ -1166,7 +1153,7 @@ struct SettingsView: View {
             .disabled(appState.isBusy || !appState.canSync)
             .opacity(appState.isBusy || !appState.canSync ? 0.55 : 1)
 
-            hint(appState.canSync ? "La liste des lampes se met aussi à jour automatiquement toutes les minutes." : "Configurez le compte Tuya avant de synchroniser.")
+            hint(appState.canSync ? "devices.sync.hint" : "devices.sync.required.hint")
         }
     }
 
@@ -1174,26 +1161,26 @@ struct SettingsView: View {
         VStack(spacing: 12) {
             settingsGroup {
                 toggleRow(
-                    title: "Vérifier automatiquement",
-                    subtitle: "Une fois par jour en arrière-plan",
+                    title: "updates.auto.check",
+                    subtitle: "updates.auto.check.detail",
                     isOn: $appState.updateService.automaticChecksEnabled
                 )
 
                 toggleRow(
-                    title: "Installer automatiquement",
-                    subtitle: "Télécharge et installe sans confirmation",
+                    title: "updates.auto.install",
+                    subtitle: "updates.auto.install.detail",
                     isOn: $appState.updateService.automaticDownloadsEnabled
                 )
                 .disabled(!appState.updateService.automaticChecksEnabled)
                 .opacity(appState.updateService.automaticChecksEnabled ? 1 : 0.5)
 
-                infoRow("Version actuelle", value: "\(appState.updateService.currentVersion) (\(appState.updateService.currentBuild))", icon: "number")
+                infoRow("updates.current.version", value: "\(appState.updateService.currentVersion) (\(appState.updateService.currentBuild))", icon: "number")
             }
 
             Button {
                 appState.updateService.checkForUpdates()
             } label: {
-                Label("Vérifier maintenant", systemImage: "arrow.triangle.2.circlepath")
+                Label("updates.check.now", systemImage: "arrow.triangle.2.circlepath")
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(Color.white)
                     .frame(maxWidth: .infinity)
@@ -1205,7 +1192,7 @@ struct SettingsView: View {
             .opacity(appState.updateService.canCheckForUpdates ? 1 : 0.55)
 
             if let date = appState.updateService.lastCheckedAt {
-                hint("Dernière vérification : \(date.formatted(date: .omitted, time: .shortened))")
+                hint(L10n.updatesLastCheck(date.formatted(date: .omitted, time: .shortened)))
             }
         }
     }
@@ -1213,15 +1200,15 @@ struct SettingsView: View {
     private var aboutSettings: some View {
         VStack(spacing: 12) {
             settingsGroup {
-                infoRow("Application", value: "LampControl", icon: "lightbulb.led")
-                infoRow("Version", value: "\(appState.updateService.currentVersion) build \(appState.updateService.currentBuild)", icon: "shippingbox")
-                infoRow("Stockage", value: "Keychain + fichiers locaux", icon: "lock.square")
+                infoRow("about.app",     value: "LampControl", icon: "lightbulb.led")
+                infoRow("about.version", value: "\(appState.updateService.currentVersion) build \(appState.updateService.currentBuild)", icon: "shippingbox")
+                infoRow("about.storage", value: NSLocalizedString("about.storage.value", comment: ""), icon: "lock.square")
             }
 
             Button {
                 openConfigurationGuide()
             } label: {
-                Label("Guide de configuration", systemImage: "book")
+                Label("about.config.guide", systemImage: "book")
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(accent)
                     .frame(maxWidth: .infinity)
@@ -1239,11 +1226,11 @@ struct SettingsView: View {
         .liquidGlassSurface(radius: 22)
     }
 
-    private func formField(_ title: String, text: Binding<String>, icon: String) -> some View {
+    private func formField(_ titleKey: LocalizedStringKey, text: Binding<String>, icon: String) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            fieldLabel(title, icon: icon)
+            fieldLabel(titleKey, icon: icon)
 
-            TextField(title, text: text)
+            TextField(titleKey, text: text)
                 .textFieldStyle(.plain)
                 .foregroundStyle(ink)
                 .autocorrectionDisabled()
@@ -1253,17 +1240,17 @@ struct SettingsView: View {
         }
     }
 
-    private func fieldLabel(_ title: String, icon: String) -> some View {
+    private func fieldLabel(_ titleKey: LocalizedStringKey, icon: String) -> some View {
         HStack(spacing: 6) {
             Image(systemName: icon)
                 .font(.system(size: 10, weight: .semibold))
-            Text(title)
+            Text(titleKey)
                 .font(.system(size: 11, weight: .semibold))
         }
         .foregroundStyle(muted)
     }
 
-    private func toggleRow(title: String, subtitle: String, isOn: Binding<Bool>) -> some View {
+    private func toggleRow(title: LocalizedStringKey, subtitle: LocalizedStringKey, isOn: Binding<Bool>) -> some View {
         Toggle(isOn: isOn) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
@@ -1277,7 +1264,7 @@ struct SettingsView: View {
         .tint(accent)
     }
 
-    private func infoRow(_ title: String, value: String, icon: String) -> some View {
+    private func infoRow(_ titleKey: LocalizedStringKey, value: String, icon: String) -> some View {
         HStack(spacing: 10) {
             Image(systemName: icon)
                 .font(.system(size: 12, weight: .semibold))
@@ -1285,7 +1272,7 @@ struct SettingsView: View {
                 .frame(width: 28, height: 28)
                 .liquidGlassSurface(radius: 10)
 
-            Text(title)
+            Text(titleKey)
                 .font(.system(size: 12, weight: .semibold))
 
             Spacer()
@@ -1295,6 +1282,21 @@ struct SettingsView: View {
                 .foregroundStyle(muted)
                 .lineLimit(1)
         }
+    }
+
+    private func hint(_ textKey: LocalizedStringKey) -> some View {
+        HStack(alignment: .top, spacing: 5) {
+            Image(systemName: "info.circle")
+                .font(.system(size: 10))
+                .foregroundStyle(accent)
+                .padding(.top, 1)
+            Text(textKey)
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(muted)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 3)
     }
 
     private func hint(_ text: String) -> some View {
@@ -1313,30 +1315,22 @@ struct SettingsView: View {
     }
 
     private var syncSummary: String {
-        guard let lastSyncDate = appState.lastSyncDate else { return "Jamais" }
+        guard let lastSyncDate = appState.lastSyncDate else { return L10n.syncNever }
         return lastSyncDate.formatted(date: .omitted, time: .shortened)
     }
 
     private var setupSteps: [SetupStep] {
         [
-            SetupStep(title: "ID", icon: "key.fill", isComplete: !appState.settings.accessId.trimmed.isEmpty),
-            SetupStep(title: "Secret", icon: "lock.fill", isComplete: appState.hasSecret || !appState.settings.accessSecret.trimmed.isEmpty),
-            SetupStep(title: "Région", icon: "globe.europe.africa.fill", isComplete: !appState.settings.endpoint.trimmed.isEmpty),
-            SetupStep(title: "UID", icon: "person.fill", isComplete: !appState.settings.uid.trimmed.isEmpty)
+            SetupStep(title: "ID",     icon: "key.fill",              isComplete: !appState.settings.accessId.trimmed.isEmpty),
+            SetupStep(title: "Secret", icon: "lock.fill",             isComplete: appState.hasSecret || !appState.settings.accessSecret.trimmed.isEmpty),
+            SetupStep(title: "Region", icon: "globe.europe.africa.fill", isComplete: !appState.settings.endpoint.trimmed.isEmpty),
+            SetupStep(title: "UID",    icon: "person.fill",           isComplete: !appState.settings.uid.trimmed.isEmpty)
         ]
     }
 
-    private var completedSetupCount: Int {
-        setupSteps.filter(\.isComplete).count
-    }
-
-    private var setupProgress: CGFloat {
-        CGFloat(completedSetupCount) / CGFloat(max(setupSteps.count, 1))
-    }
-
-    private var isSetupComplete: Bool {
-        completedSetupCount == setupSteps.count
-    }
+    private var completedSetupCount: Int { setupSteps.filter(\.isComplete).count }
+    private var setupProgress: CGFloat  { CGFloat(completedSetupCount) / CGFloat(max(setupSteps.count, 1)) }
+    private var isSetupComplete: Bool   { completedSetupCount == setupSteps.count }
 
     private func openConfigurationGuide() {
         guard let url = URL(string: "https://github.com/hugoinformatique/LampControl/blob/main/docs/CONFIGURATION.fr.md") else { return }
@@ -1361,11 +1355,10 @@ private struct AutomationEditor: View {
         .applyScenePreset(id: "focus"), .applyScenePreset(id: "relax"),
         .applyScenePreset(id: "neon"),  .applyScenePreset(id: "night"),
     ]
-    private let dayLabels = ["L", "M", "M", "J", "V", "S", "D"]
 
     var body: some View {
         VStack(spacing: 10) {
-            TextField("Nom (ex: Extinction nocturne)", text: $name)
+            TextField("automation.name.placeholder", text: $name)
                 .textFieldStyle(.plain)
                 .font(.system(size: 12, weight: .semibold))
                 .autocorrectionDisabled()
@@ -1386,7 +1379,7 @@ private struct AutomationEditor: View {
                 }
             }
 
-            Picker("Action", selection: $action) {
+            Picker("", selection: $action) {
                 ForEach(actions, id: \.title) { a in
                     Label(a.title, systemImage: a.icon).tag(a)
                 }
@@ -1398,7 +1391,7 @@ private struct AutomationEditor: View {
             .liquidGlassSurface(radius: 12, tint: Color.white.opacity(0.06))
 
             HStack(spacing: 6) {
-                Text("Jours:")
+                Text("automation.days")
                     .font(.system(size: 11, weight: .medium))
                     .foregroundStyle(LCTheme.muted)
                 ForEach(1...7, id: \.self) { day in
@@ -1406,7 +1399,7 @@ private struct AutomationEditor: View {
                         if weekdays.contains(day) { weekdays.remove(day) }
                         else { weekdays.insert(day) }
                     } label: {
-                        Text(dayLabels[day - 1])
+                        Text(L10n.dayLetters[safe: day - 1] ?? "")
                             .font(.system(size: 10, weight: .bold))
                             .foregroundStyle(weekdays.contains(day) ? Color.white : LCTheme.muted)
                             .frame(width: 24, height: 24)
@@ -1427,7 +1420,7 @@ private struct AutomationEditor: View {
                     onSave(a)
                     isPresented = false
                 } label: {
-                    Label("Créer", systemImage: "checkmark")
+                    Label("automation.create", systemImage: "checkmark")
                         .frame(maxWidth: .infinity)
                         .frame(height: 34)
                 }
@@ -1448,41 +1441,27 @@ private struct AutomationEditor: View {
 }
 
 private enum SettingsRoute {
-    case overview
-    case providers
-    case tuya
-    case hue
-    case lifx
-    case govee
-    case yeelight
-    case nanoleaf
-    case wiz
-    case shortcuts
-    case automations
-    case circadian
-    case devices
-    case updates
-    case premium
-    case about
+    case overview, providers, tuya, hue, lifx, govee, yeelight, nanoleaf, wiz
+    case shortcuts, automations, circadian, devices, updates, premium, about
 
     var title: String {
         switch self {
-        case .overview: "Réglages"
-        case .providers: "Fournisseurs"
-        case .tuya:      "Compte Tuya"
-        case .hue:       "Philips Hue"
-        case .lifx:      "LIFX"
-        case .govee:     "Govee"
-        case .yeelight:  "Yeelight"
-        case .nanoleaf:    "Nanoleaf"
-        case .wiz:         "WiZ"
-        case .shortcuts:   "Raccourcis"
-        case .automations: "Automations"
-        case .circadian:   "Éclairage adaptatif"
-        case .devices:     "Appareils"
-        case .updates:   "Mises à jour"
-        case .premium:   "Premium"
-        case .about:     "À propos"
+        case .overview:    NSLocalizedString("route.settings", comment: "")
+        case .providers:   NSLocalizedString("route.providers", comment: "")
+        case .tuya:        NSLocalizedString("route.tuya", comment: "")
+        case .hue:         NSLocalizedString("route.hue", comment: "")
+        case .lifx:        NSLocalizedString("route.lifx", comment: "")
+        case .govee:       NSLocalizedString("route.govee", comment: "")
+        case .yeelight:    NSLocalizedString("route.yeelight", comment: "")
+        case .nanoleaf:    NSLocalizedString("route.nanoleaf", comment: "")
+        case .wiz:         NSLocalizedString("route.wiz", comment: "")
+        case .shortcuts:   NSLocalizedString("route.shortcuts", comment: "")
+        case .automations: NSLocalizedString("route.automations", comment: "")
+        case .circadian:   NSLocalizedString("route.circadian", comment: "")
+        case .devices:     NSLocalizedString("route.devices", comment: "")
+        case .updates:     NSLocalizedString("route.updates", comment: "")
+        case .premium:     NSLocalizedString("route.premium", comment: "")
+        case .about:       NSLocalizedString("route.about", comment: "")
         }
     }
 
@@ -1490,37 +1469,47 @@ private enum SettingsRoute {
     func subtitle(appState: AppState) -> String {
         switch self {
         case .overview:
-            appState.canSync ? "Configuration active" : "Configuration requise"
+            appState.canSync ? L10n.routeSettingsActive : L10n.routeSettingsRequired
         case .providers:
-            "Tuya, Hue, LIFX, Govee, Yeelight, Nanoleaf, WiZ"
+            L10n.routeProvidersSubtitle
         case .tuya:
-            "Identifiants Smart Life / Tuya Cloud"
+            L10n.routeTuyaSubtitle
         case .hue:
-            appState.hueSettings.isConfigured ? "Bridge Hue connecté" : "Bridge local à connecter"
+            appState.hueSettings.isConfigured ? L10n.routeHueConnected : L10n.routeHueDisconnected
         case .lifx:
-            appState.lifxSettings.isConfigured ? "Token Cloud configuré" : "Token LIFX requis"
+            appState.lifxSettings.isConfigured ? L10n.routeLifxConnected : L10n.routeLifxDisconnected
         case .govee:
-            appState.goveeSettings.isConfigured ? "Clé API enregistrée" : "Clé API Govee requise"
+            appState.goveeSettings.isConfigured ? L10n.routeGoveeConnected : L10n.routeGoveeDisconnected
         case .yeelight:
-            appState.yeelightSettings.isConfigured ? "\(appState.yeelightSettings.bulbs.count) lampe(s) en LAN" : "Aucune lampe enregistrée"
+            appState.yeelightSettings.isConfigured
+                ? L10n.routeYeeConnected(appState.yeelightSettings.bulbs.count)
+                : L10n.routeYeeNone
         case .nanoleaf:
-            appState.nanoleafSettings.isConfigured ? "\(appState.nanoleafSettings.devices.count) panneau(x) en LAN" : "Aucun panneau enregistré"
+            appState.nanoleafSettings.isConfigured
+                ? L10n.routeNanoleafConnected(appState.nanoleafSettings.devices.count)
+                : L10n.routeNanoleafNone
         case .wiz:
-            appState.wizSettings.isConfigured ? "\(appState.wizSettings.devices.count) ampoule(s) en LAN" : "Aucune ampoule enregistrée"
+            appState.wizSettings.isConfigured
+                ? L10n.routeWizConnected(appState.wizSettings.devices.count)
+                : L10n.routeWizNone
         case .shortcuts:
-            "Raccourcis ⌥0–⌥4 configurables"
+            L10n.routeShortcutsSubtitle
         case .automations:
-            appState.automations.isEmpty ? "Aucune automation" : "\(appState.automations.filter(\.isEnabled).count)/\(appState.automations.count) actives"
+            appState.automations.isEmpty
+                ? L10n.routeAutomationsNone
+                : L10n.routeAutomationsActive(appState.automations.filter(\.isEnabled).count, appState.automations.count)
         case .circadian:
-            appState.circadianSettings.isEnabled ? "Actif — \(appState.circadianSettings.keyframes.count) points de contrôle" : "Désactivé"
+            appState.circadianSettings.isEnabled
+                ? L10n.routeCircadianActive(appState.circadianSettings.keyframes.count)
+                : L10n.routeCircadianDisabled
         case .devices:
-            "\(appState.lamps.count) lampe(s) synchronisée(s)"
+            L10n.routeDevices(appState.lamps.count)
         case .updates:
-            "Sparkle auto-update"
+            L10n.routeUpdatesSubtitle
         case .premium:
             appState.licenseState.statusText
         case .about:
-            "Version et informations locales"
+            L10n.routeAboutSubtitle
         }
     }
 }
@@ -1529,7 +1518,6 @@ private struct SetupStep: Identifiable {
     let title: String
     let icon: String
     let isComplete: Bool
-
     var id: String { title }
 }
 
@@ -1556,7 +1544,12 @@ private struct SetupStepPill: View {
 }
 
 private extension String {
-    var trimmed: String {
-        trimmingCharacters(in: .whitespacesAndNewlines)
+    var trimmed: String { trimmingCharacters(in: .whitespacesAndNewlines) }
+}
+
+private extension Array {
+    subscript(safe index: Int) -> Element? {
+        guard index >= 0, index < count else { return nil }
+        return self[index]
     }
 }

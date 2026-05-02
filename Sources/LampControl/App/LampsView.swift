@@ -59,10 +59,10 @@ struct LampsView: View {
                     .liquidGlassCircle()
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Bienvenue dans LampControl")
+                    Text("lamps.welcome.title")
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(ink)
-                    Text("Ajoutez vos identifiants Tuya pour commencer")
+                    Text("lamps.welcome.subtitle")
                         .font(.system(size: 11, weight: .medium))
                         .foregroundStyle(muted)
                 }
@@ -78,7 +78,7 @@ struct LampsView: View {
             .liquidGlassSurface(radius: 16, tint: Color.orange.opacity(0.12), interactive: true)
         }
         .buttonStyle(.plain)
-        .help("Ouvrir les réglages Tuya")
+        .help("lamps.open.settings")
     }
 
     private var emptyStateCard: some View {
@@ -90,10 +90,10 @@ struct LampsView: View {
                 .liquidGlassCircle()
 
             VStack(alignment: .leading, spacing: 2) {
-                Text("Aucune lampe trouvée")
+                Text("lamps.empty.title")
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(ink)
-                Text("Vérifiez que vos lampes sont allumées et liées au compte Smart Life")
+                Text("lamps.empty.subtitle")
                     .font(.system(size: 11, weight: .medium))
                     .foregroundStyle(muted)
                     .fixedSize(horizontal: false, vertical: true)
@@ -107,7 +107,6 @@ struct LampsView: View {
 
     private var statusBar: some View {
         HStack(spacing: 10) {
-            // Sync status
             Image(systemName: appState.isAutoSyncing ? "arrow.triangle.2.circlepath" : "bolt.horizontal.circle")
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(muted)
@@ -119,7 +118,6 @@ struct LampsView: View {
 
             Spacer(minLength: 4)
 
-            // Compact metrics
             HStack(spacing: 6) {
                 Label("\(appState.visibleLamps.count)", systemImage: "lightbulb.2")
                     .font(.system(size: 11, weight: .semibold).monospacedDigit())
@@ -129,12 +127,11 @@ struct LampsView: View {
                     .fill(appState.visibleLamps.filter(\.online).count > 0 ? Color.green.opacity(0.75) : Color.gray.opacity(0.40))
                     .frame(width: 5, height: 5)
 
-                Text("\(appState.visibleLamps.filter(\.online).count) en ligne")
+                Text(L10n.onlineLamps(appState.visibleLamps.filter(\.online).count))
                     .font(.system(size: 11, weight: .medium))
                     .foregroundStyle(muted)
             }
 
-            // Circadian toggle
             if appState.licenseState.entitlements.canUseAdaptiveLighting {
                 Button {
                     Task { await appState.setAdaptiveLighting(enabled: !appState.circadianSettings.isEnabled) }
@@ -146,10 +143,9 @@ struct LampsView: View {
                         .liquidGlassSurface(radius: 10, tint: appState.circadianSettings.isEnabled ? Color.orange.opacity(0.15) : nil, interactive: true)
                 }
                 .buttonStyle(.plain)
-                .help(appState.circadianSettings.isEnabled ? "Éclairage adaptatif actif — désactiver" : "Activer l'éclairage adaptatif")
+                .help(appState.circadianSettings.isEnabled ? "lamps.adaptive.disable" : "lamps.adaptive.enable")
             }
 
-            // Sync button
             Button { Task { await appState.syncLamps() } } label: {
                 Image(systemName: "arrow.clockwise.circle.fill")
                     .font(.system(size: 13, weight: .semibold))
@@ -160,7 +156,7 @@ struct LampsView: View {
             .buttonStyle(.plain)
             .disabled(appState.isBusy || !appState.canSync)
             .opacity(appState.isBusy || !appState.canSync ? 0.45 : 1)
-            .help("Synchroniser maintenant")
+            .help("lamps.sync.now")
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 7)
@@ -175,7 +171,7 @@ struct LampsView: View {
                 .frame(width: 28, height: 28)
                 .liquidGlassSurface(radius: 10, tint: Color.yellow.opacity(0.10))
 
-            Text("\(appState.hiddenLampCount) lampe(s) masquée(s) par l'offre gratuite")
+            Text(L10n.hiddenLamps(appState.hiddenLampCount))
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(muted)
 
@@ -187,9 +183,9 @@ struct LampsView: View {
     }
 
     private var syncLabel: String {
-        if appState.isAutoSyncing { return "Mise à jour..." }
-        guard let d = appState.lastSyncDate else { return "Auto-sync" }
-        return "Synchro \(d.formatted(date: .omitted, time: .shortened))"
+        if appState.isAutoSyncing { return L10n.syncUpdating }
+        guard let d = appState.lastSyncDate else { return L10n.syncAuto }
+        return L10n.syncTime(d.formatted(date: .omitted, time: .shortened))
     }
 }
 
@@ -200,7 +196,7 @@ private struct ScenePresetBar: View {
     @State private var draftTitle = ""
     @State private var draftIcon = "paintpalette.fill"
     @State private var draftColor = HSVColor.warm
-    @State private var captureMode = false   // false = couleur, true = état actuel
+    @State private var captureMode = false
 
     private let iconChoices = [
         "paintpalette.fill", "sparkles", "moon.fill", "sun.max.fill",
@@ -212,7 +208,6 @@ private struct ScenePresetBar: View {
         VStack(spacing: 8) {
             ScrollView(.horizontal) {
                 HStack(spacing: 7) {
-                    // Built-in presets
                     ForEach(LightScenePreset.presets) { preset in
                         Button { Task { await appState.applyScene(preset) } } label: {
                             SceneChip(title: preset.title, icon: preset.icon, color: preset.color)
@@ -220,10 +215,9 @@ private struct ScenePresetBar: View {
                         .buttonStyle(.plain)
                         .disabled(appState.isBusy)
                         .opacity(appState.isBusy ? 0.55 : 1)
-                        .help("Appliquer « \(preset.title) »")
+                        .help(L10n.sceneApplyPreset(preset.title))
                     }
 
-                    // User scenes (colour + capture)
                     ForEach(appState.userScenes) { scene in
                         Button { Task { await appState.applyScene(scene) } } label: {
                             SceneChip(title: scene.title, icon: scene.icon, color: scene.color, isCapture: scene.isCapture)
@@ -231,19 +225,18 @@ private struct ScenePresetBar: View {
                         .buttonStyle(.plain)
                         .disabled(appState.isBusy)
                         .opacity(appState.isBusy ? 0.55 : 1)
-                        .help(scene.isCapture ? "Appliquer l'état « \(scene.title) »" : "Appliquer l'ambiance « \(scene.title) »")
+                        .help(scene.isCapture ? L10n.sceneApplyCapture(scene.title) : L10n.sceneApplyAmbiance(scene.title))
                         .contextMenu {
-                            Button("Modifier") { beginEditing(scene) }
-                            Button("Supprimer", role: .destructive) { appState.deleteUserScene(scene) }
+                            Button("lamps.scene.edit") { beginEditing(scene) }
+                            Button("lamps.scene.delete", role: .destructive) { appState.deleteUserScene(scene) }
                         }
                     }
 
-                    // Add button
                     Button { beginCreating() } label: {
                         VStack(spacing: 4) {
                             Image(systemName: "plus")
                                 .font(.system(size: 12, weight: .bold))
-                            Text("Scène")
+                            Text("lamps.scene.button")
                                 .font(.system(size: 10, weight: .semibold))
                         }
                         .foregroundStyle(LCTheme.accent)
@@ -269,9 +262,8 @@ private struct ScenePresetBar: View {
 
     private var sceneEditor: some View {
         VStack(spacing: 8) {
-            // Name + icon
             HStack(spacing: 8) {
-                TextField("Nom", text: $draftTitle)
+                TextField("lamps.scene.name.placeholder", text: $draftTitle)
                     .textFieldStyle(.plain)
                     .font(.system(size: 12, weight: .semibold))
                     .autocorrectionDisabled()
@@ -287,13 +279,12 @@ private struct ScenePresetBar: View {
                 .liquidGlassSurface(radius: 12, tint: Color.white.opacity(0.06))
             }
 
-            // Mode toggle: couleur vs capture
-            if editingId == nil {   // only on creation, not edit
+            if editingId == nil {
                 HStack(spacing: 0) {
-                    modeButton(label: "Couleur",  icon: "paintpalette.fill", selected: !captureMode) {
+                    modeButton(label: "lamps.color.mode",   icon: "paintpalette.fill", selected: !captureMode) {
                         withAnimation(.spring(response: 0.22, dampingFraction: 0.85)) { captureMode = false }
                     }
-                    modeButton(label: "Capturer", icon: "square.stack.3d.up.fill", selected: captureMode) {
+                    modeButton(label: "lamps.capture.mode", icon: "square.stack.3d.up.fill", selected: captureMode) {
                         withAnimation(.spring(response: 0.22, dampingFraction: 0.85)) { captureMode = true }
                     }
                 }
@@ -301,17 +292,16 @@ private struct ScenePresetBar: View {
                 .liquidGlassSurface(radius: 14)
             }
 
-            // Content area
             if captureMode {
                 HStack(spacing: 10) {
                     Image(systemName: "square.stack.3d.up.fill")
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(LCTheme.accent)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("État de \(appState.lamps.count) lampe(s) sauvegardé")
+                        Text(L10n.captureState(appState.lamps.count))
                             .font(.system(size: 11, weight: .semibold))
                             .foregroundStyle(LCTheme.ink)
-                        Text("Power, luminosité, température et couleur de chaque lampe.")
+                        Text("lamps.capture.state.detail")
                             .font(.system(size: 10, weight: .medium))
                             .foregroundStyle(LCTheme.muted)
                             .fixedSize(horizontal: false, vertical: true)
@@ -334,7 +324,6 @@ private struct ScenePresetBar: View {
                 }
             }
 
-            // Save / cancel (for capture mode)
             if captureMode {
                 HStack(spacing: 8) { confirmButton; cancelButton }
             }
@@ -367,7 +356,7 @@ private struct ScenePresetBar: View {
         .liquidGlassButtonStyle()
     }
 
-    private func modeButton(label: String, icon: String, selected: Bool, action: @escaping () -> Void) -> some View {
+    private func modeButton(label: LocalizedStringKey, icon: String, selected: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             HStack(spacing: 5) {
                 Image(systemName: icon).font(.system(size: 11, weight: .semibold))
@@ -451,10 +440,12 @@ private struct GroupCompactBar: View {
                 .liquidGlassSurface(radius: 12)
 
             VStack(alignment: .leading, spacing: 1) {
-                Text("Groupe")
+                Text("lamps.group.title")
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(LCTheme.ink)
-                Text(appState.selectedLampIds.isEmpty ? "Sélectionne 2 lampes" : "\(appState.selectedLampIds.count) sélectionnée(s)")
+                Text(appState.selectedLampIds.isEmpty
+                     ? NSLocalizedString("lamps.group.select.hint", comment: "")
+                     : L10n.groupSelected(appState.selectedLampIds.count))
                     .font(.system(size: 11, weight: .medium))
                     .foregroundStyle(muted)
             }
@@ -504,10 +495,10 @@ private struct GroupControlPanel: View {
                 HStack(spacing: 10) {
                     ColorSwatch(color: appState.groupColor, size: 30)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Scène groupée")
+                        Text("lamps.group.scene.title")
                             .font(.system(size: 14, weight: .semibold))
                             .foregroundStyle(ink)
-                        Text("\(appState.selectedLampIds.count) sélectionnée(s)")
+                        Text(L10n.groupSelected(appState.selectedLampIds.count))
                             .font(.system(size: 11, weight: .medium))
                             .foregroundStyle(muted)
                     }
@@ -542,7 +533,7 @@ private struct GroupControlPanel: View {
             }
 
             if appState.selectedLampIds.count < 2 {
-                Text("Sélectionne au moins deux lampes pour appliquer une scène groupée.")
+                Text("lamps.group.scene.hint")
                     .font(.system(size: 11, weight: .medium))
                     .foregroundStyle(muted)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -552,7 +543,7 @@ private struct GroupControlPanel: View {
                 Button {
                     Task { await appState.applyGroupColor() }
                 } label: {
-                    Label("Appliquer la couleur", systemImage: "sparkles")
+                    Label("lamps.apply.color", systemImage: "sparkles")
                         .frame(maxWidth: .infinity)
                 }
                 .liquidGlassButtonStyle(prominent: true)
@@ -608,7 +599,7 @@ private struct LampRow: View {
                 .buttonStyle(.plain)
                 .disabled(!lamp.online)
                 .opacity(lamp.online ? 1 : 0.52)
-                .help("Allumer ou éteindre")
+                .help("lamps.toggle.power")
 
                 Button {
                     withAnimation(.spring(response: 0.28, dampingFraction: 0.86)) {
@@ -622,7 +613,7 @@ private struct LampRow: View {
                         .liquidGlassCircle(interactive: true)
                 }
                 .buttonStyle(.plain)
-                .help(showsAdvancedControls ? "Masquer les options" : "Afficher les options")
+                .help(showsAdvancedControls ? "lamps.hide.options" : "lamps.show.options")
             }
 
             if showsAdvancedControls {
@@ -711,7 +702,9 @@ private struct LampRow: View {
                     appState.toggleSelection(lamp)
                 } label: {
                     Label(
-                        appState.selectedLampIds.contains(lamp.id) ? "Dans le groupe" : "Ajouter au groupe",
+                        appState.selectedLampIds.contains(lamp.id)
+                            ? NSLocalizedString("lamps.in.group", comment: "")
+                            : NSLocalizedString("lamps.add.to.group", comment: ""),
                         systemImage: appState.selectedLampIds.contains(lamp.id) ? "checkmark.circle.fill" : "circle"
                     )
                     .font(.system(size: 11, weight: .semibold))
@@ -830,8 +823,8 @@ private struct LampRow: View {
     }
 
     private var compactStatus: String {
-        if !lamp.online { return "Hors ligne" }
-        return lamp.power ? "Allumée" : "Éteinte"
+        if !lamp.online { return L10n.statusOffline }
+        return lamp.power ? L10n.statusOn : L10n.statusOff
     }
 
     private var brightnessCapability: NumericCapability? {
@@ -873,8 +866,8 @@ private struct LampRow: View {
 
     private func temperatureLabel(for capability: NumericCapability) -> String {
         let pct = temperaturePercentage(for: capability)
-        if pct < 30 { return "Chaud" }
-        if pct > 70 { return "Froid" }
+        if pct < 30 { return L10n.tempWarm }
+        if pct > 70 { return L10n.tempCold }
         return "\(pct)%"
     }
 
@@ -882,13 +875,11 @@ private struct LampRow: View {
         if let colorValue = lamp.color?.v {
             return min(1000, max(10, colorValue))
         }
-
         if let brightness = lamp.capabilities.brightness, let value = lamp.brightness {
             let range = max(1, brightness.max - brightness.min)
             let normalized = Double(value - brightness.min) / Double(range)
             return min(1000, max(10, Int(round(normalized * 1000.0))))
         }
-
         return HSVColor.defaultColorValue
     }
 }
@@ -945,15 +936,7 @@ private struct ColorSpectrumPicker: View {
 
             ZStack(alignment: .topLeading) {
                 LinearGradient(
-                    colors: [
-                        .red,
-                        .yellow,
-                        .green,
-                        .cyan,
-                        .blue,
-                        .purple,
-                        .red
-                    ],
+                    colors: [.red, .yellow, .green, .cyan, .blue, .purple, .red],
                     startPoint: .leading,
                     endPoint: .trailing
                 )

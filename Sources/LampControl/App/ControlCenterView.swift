@@ -113,7 +113,7 @@ struct ControlCenterView: View {
                                 .animation(appState.isAutoSyncing ? .easeOut(duration: 1.0).repeatForever(autoreverses: false) : .default, value: appState.isAutoSyncing)
                         }
                     }
-                    Text(appState.canSync ? "Cloud actif" : "Configuration requise")
+                    Text(appState.canSync ? "cloud.active" : "config.required")
                         .font(.system(size: 11, weight: .medium))
                         .foregroundStyle(muted)
                 }
@@ -127,20 +127,20 @@ struct ControlCenterView: View {
                     .frame(width: 34, height: 34)
             }
             .liquidGlassButtonStyle()
-            .help("Quitter LampControl")
+            .help("app.quit")
         }
     }
 
     private var tabs: some View {
         HStack(spacing: 6) {
-            tabButton(.lamps, title: "Lampes", icon: "slider.horizontal.3")
-            tabButton(.settings, title: "Réglages", icon: "gearshape")
+            tabButton(.lamps, title: "tab.lamps", icon: "slider.horizontal.3")
+            tabButton(.settings, title: "tab.settings", icon: "gearshape")
         }
         .padding(4)
         .liquidGlassSurface(radius: 18)
     }
 
-    private func tabButton(_ tab: ControlTab, title: String, icon: String) -> some View {
+    private func tabButton(_ tab: ControlTab, title: LocalizedStringKey, icon: String) -> some View {
         let isActive = appState.selectedTab == tab
 
         return Button {
@@ -172,10 +172,10 @@ struct ControlCenterView: View {
 
     private var isErrorMessage: Bool {
         let lowered = appState.message.lowercased()
-        return lowered.contains("erreur") || lowered.contains("error") ||
-               lowered.contains("impossible") || lowered.contains("inconnue") ||
-               lowered.contains("invalide") || lowered.contains("failed") ||
-               lowered.contains("échec")
+        return lowered.contains("error") || lowered.contains("erreur") ||
+               lowered.contains("impossible") || lowered.contains("failed") ||
+               lowered.contains("invalide") || lowered.contains("invalid") ||
+               lowered.contains("échec") || lowered.contains("failed")
     }
 
     private var messageView: some View {

@@ -13,12 +13,12 @@ enum ShortcutAction: String, Codable, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .powerOffAll:      return "Éteindre tout"
-        case .powerOnAll:       return "Allumer tout"
-        case .applySceneFocus:  return "Scène Focus"
-        case .applySceneRelax:  return "Scène Relax"
-        case .applySceneNeon:   return "Scène Neon"
-        case .applySceneNight:  return "Scène Nuit"
+        case .powerOffAll:      return L10n.shortcutPowerOff
+        case .powerOnAll:       return L10n.shortcutPowerOn
+        case .applySceneFocus:  return L10n.shortcutFocus
+        case .applySceneRelax:  return L10n.shortcutRelax
+        case .applySceneNeon:   return L10n.shortcutNeon
+        case .applySceneNight:  return L10n.shortcutNight
         }
     }
 

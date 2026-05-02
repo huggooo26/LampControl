@@ -1,0 +1,330 @@
+/* LampControl — Español */
+
+/* App */
+"app.quit" = "Salir de LampControl";
+"action.save" = "Guardar";
+
+/* Vista de lámparas */
+"lamps.welcome.title" = "Bienvenido a LampControl";
+"lamps.welcome.subtitle" = "Añade tus credenciales Tuya para comenzar";
+"lamps.open.settings" = "Abrir ajustes Tuya";
+"lamps.empty.title" = "No se encontraron lámparas";
+"lamps.empty.subtitle" = "Asegúrate de que tus lámparas estén encendidas y vinculadas a Smart Life";
+"lamps.sync.updating" = "Actualizando...";
+"lamps.sync.auto" = "Auto-sync";
+"lamps.sync.time" = "Sincronizado %@";
+"lamps.hidden.count" = "%d lámpara(s) oculta(s) por el plan gratuito";
+"lamps.online.count" = "%d en línea";
+"lamps.adaptive.disable" = "Iluminación adaptativa activa — desactivar";
+"lamps.adaptive.enable" = "Activar iluminación adaptativa";
+"lamps.sync.now" = "Sincronizar ahora";
+"lamps.scene.button" = "Escena";
+"lamps.scene.edit" = "Editar";
+"lamps.scene.delete" = "Eliminar";
+"lamps.scene.apply.preset" = "Aplicar \"%@\"";
+"lamps.scene.apply.capture" = "Aplicar estado \"%@\"";
+"lamps.scene.apply.ambiance" = "Aplicar ambiente \"%@\"";
+"lamps.color.mode" = "Color";
+"lamps.capture.mode" = "Capturar";
+"lamps.capture.state" = "Estado de %d lámpara(s) guardado";
+"lamps.capture.state.detail" = "Encendido, brillo, temperatura y color de cada lámpara.";
+"lamps.group.title" = "Grupo";
+"lamps.group.select.hint" = "Selecciona 2 lámparas";
+"lamps.group.selected" = "%d seleccionada(s)";
+"lamps.group.scene.title" = "Escena grupal";
+"lamps.group.scene.hint" = "Selecciona al menos dos lámparas para aplicar una escena grupal.";
+"lamps.apply.color" = "Aplicar color";
+"lamps.in.group" = "En el grupo";
+"lamps.add.to.group" = "Añadir al grupo";
+"lamps.toggle.power" = "Encender o apagar";
+"lamps.show.options" = "Mostrar opciones";
+"lamps.hide.options" = "Ocultar opciones";
+"lamps.scene.name.placeholder" = "Nombre";
+
+/* Estado de lámparas */
+"lamp.status.offline" = "Sin conexión";
+"lamp.status.on" = "Encendida";
+"lamp.status.off" = "Apagada";
+"lamp.temp.warm" = "Cálida";
+"lamp.temp.cold" = "Fría";
+
+/* Centro de control */
+"cloud.active" = "Nube activa";
+"config.required" = "Configuración requerida";
+"tab.lamps" = "Lámparas";
+"tab.settings" = "Ajustes";
+
+/* Configuración inicial */
+"onboarding.title" = "Configurar LampControl";
+"onboarding.subtitle" = "Tres datos de Tuya son suficientes para comenzar.";
+"onboarding.step1.title" = "Crear o abrir el proyecto Tuya";
+"onboarding.step1.detail" = "Smart Life debe estar vinculado al proyecto Cloud.";
+"onboarding.step2.title" = "Pegar Access ID, Secret y UID";
+"onboarding.step2.detail" = "El Secret se guarda en el Keychain.";
+"onboarding.step3.title" = "Probar la sincronización";
+"onboarding.step3.detail" = "LampControl detectará las lámparas compatibles.";
+"onboarding.configure" = "Configurar";
+"onboarding.guide" = "Abrir guía";
+"onboarding.dismiss" = "Ocultar";
+"onboarding.close" = "Cerrar";
+
+/* Secciones de ajustes */
+"route.settings" = "Ajustes";
+"route.providers" = "Proveedores";
+"route.tuya" = "Cuenta Tuya";
+"route.hue" = "Philips Hue";
+"route.lifx" = "LIFX";
+"route.govee" = "Govee";
+"route.yeelight" = "Yeelight";
+"route.nanoleaf" = "Nanoleaf";
+"route.wiz" = "WiZ";
+"route.shortcuts" = "Atajos";
+"route.automations" = "Automatizaciones";
+"route.circadian" = "Iluminación adaptativa";
+"route.devices" = "Dispositivos";
+"route.updates" = "Actualizaciones";
+"route.premium" = "Premium";
+"route.about" = "Acerca de";
+
+/* Navegación de ajustes */
+"settings.back" = "Volver";
+"route.settings.sub.active" = "Configuración activa";
+"route.settings.sub.required" = "Configuración requerida";
+"route.providers.subtitle" = "Tuya, Hue, LIFX, Govee, Yeelight, Nanoleaf, WiZ";
+"route.tuya.subtitle" = "Credenciales Smart Life / Tuya Cloud";
+"route.hue.sub.connected" = "Bridge Hue conectado";
+"route.hue.sub.disconnected" = "Bridge local a conectar";
+"route.lifx.sub.connected" = "Token Cloud configurado";
+"route.lifx.sub.disconnected" = "Token LIFX requerido";
+"route.govee.sub.connected" = "Clave API guardada";
+"route.govee.sub.disconnected" = "Clave API Govee requerida";
+"route.yeelight.sub.none" = "Ninguna lámpara registrada";
+"route.yeelight.sub.connected" = "%d lámpara(s) en LAN";
+"route.nanoleaf.sub.none" = "Ningún panel registrado";
+"route.nanoleaf.sub.connected" = "%d panel(es) en LAN";
+"route.wiz.sub.none" = "Ninguna bombilla registrada";
+"route.wiz.sub.connected" = "%d bombilla(s) en LAN";
+"route.shortcuts.subtitle" = "Atajos ⌥0–⌥4 configurables";
+"route.automations.sub.none" = "Sin automatizaciones";
+"route.automations.sub.active" = "%d/%d activas";
+"route.circadian.sub.disabled" = "Desactivado";
+"route.circadian.sub.active" = "Activo — %d puntos de control";
+"route.devices.subtitle" = "%d lámpara(s) sincronizada(s)";
+"route.updates.subtitle" = "Sparkle auto-update";
+"route.about.subtitle" = "Versión e información local";
+
+/* Proveedores */
+"providers.title" = "Proveedores";
+"providers.subtitle" = "%d conectado(s), %d próximamente";
+"provider.connected" = "Conectado y usado para sincronización";
+"provider.tuya" = "Cuenta Smart Life / Tuya Cloud";
+"provider.hue" = "Bridge Hue local (LAN)";
+"provider.lifx" = "Token LIFX Cloud";
+"provider.govee" = "Clave API de Govee Developer";
+"provider.yeelight" = "Lámparas en LAN (modo desarrollador)";
+"provider.nanoleaf" = "Paneles luminosos en LAN";
+"provider.wiz" = "Bombillas WiZ en LAN (Signify)";
+
+/* Tuya */
+"tuya.title" = "Cuenta Tuya";
+"tuya.secret.stored" = "Secret guardado en el Keychain";
+"tuya.cred.required" = "Credenciales requeridas";
+"tuya.access.id" = "Access ID";
+"tuya.access.secret" = "Access Secret";
+"tuya.secret.placeholder" = "Secret guardado";
+"tuya.region" = "Región";
+"tuya.endpoint" = "Endpoint";
+"tuya.uid" = "UID de usuario";
+"tuya.save" = "Guardar";
+"tuya.test" = "Probar";
+"tuya.hint" = "Vincula tu cuenta Smart Life al proyecto Tuya Cloud, luego copia el UID de la cuenta vinculada.";
+
+/* Resumen de configuración */
+"setup.complete" = "Configuración lista";
+"setup.incomplete" = "Configuración pendiente";
+"setup.complete.detail" = "Tuya está listo para sincronizar.";
+"setup.incomplete.detail" = "Añade la información Tuya que falta.";
+"setup.guide" = "Abrir guía Tuya";
+
+/* Hue */
+"hue.connected" = "Philips Hue conectado";
+"hue.connect" = "Conectar un bridge Hue";
+"hue.bridge.detect.hint" = "Detecta el bridge, presiona su botón y conéctalo.";
+"hue.bridge.detect.button" = "Detectar bridges";
+"hue.bridge.ip" = "IP del bridge";
+"hue.reconnect" = "Reconectar Hue";
+"hue.connect.button" = "Conectar Hue";
+"hue.hint" = "Antes de conectar, presiona el botón físico del bridge Hue. LampControl recibirá una clave local guardada en el Keychain.";
+
+/* LIFX */
+"lifx.connected" = "LIFX conectado";
+"lifx.connect" = "Conectar LIFX Cloud";
+"lifx.token.hint" = "Pega un token personal LIFX para sincronizar tus lámparas.";
+"lifx.token.saved" = "Token LIFX guardado";
+"lifx.token.placeholder" = "Token LIFX";
+"lifx.save" = "Guardar y sincronizar";
+"lifx.hint" = "Crea el token en tu cuenta LIFX Cloud y pégalo aquí. Se guarda localmente en el Keychain de macOS.";
+
+/* Govee */
+"govee.connected" = "Govee conectado";
+"govee.connect" = "Conectar Govee Cloud";
+"govee.hint" = "Solicita una clave API desde la app Govee Home (≡ → Acerca de → Apply for API Key).";
+"govee.apikey.saved" = "Clave API guardada";
+"govee.apikey.placeholder" = "Clave API Govee";
+"govee.save" = "Guardar y sincronizar";
+"govee.apikey.hint" = "La clave se envía por correo de Govee. Límite de 60 solicitudes/minuto. Guardada localmente en el Keychain de macOS.";
+
+/* Yeelight */
+"yeelight.connected.count" = "%d lámpara(s) Yeelight";
+"yeelight.connect" = "Añadir una lámpara Yeelight";
+"yeelight.hint" = "Activa \"LAN Control\" en la app Yeelight, luego ingresa la IP local de la lámpara.";
+"yeelight.ip.placeholder" = "Dirección IP (ej: 192.168.1.42)";
+"device.name.placeholder" = "Nombre (opcional)";
+"device.add.sync" = "Añadir y sincronizar";
+"yeelight.ip.hint" = "La IP es visible en la app Yeelight (ajustes de la lámpara → Información del dispositivo). LAN Control debe estar activado en cada bombilla.";
+
+/* Nanoleaf */
+"nanoleaf.connected.count" = "%d panel(es) Nanoleaf";
+"nanoleaf.connect" = "Añadir un panel Nanoleaf";
+"nanoleaf.hint" = "Mantén presionado el botón de encendido 5-7s hasta que parpadee, luego presiona Emparejar.";
+"nanoleaf.ip.placeholder" = "Dirección IP (ej: 192.168.1.50)";
+"nanoleaf.pair.button" = "Emparejar y sincronizar";
+"nanoleaf.ip.hint" = "El puerto predeterminado es 16021. Asegúrate de que el panel esté en la misma red Wi-Fi.";
+
+/* WiZ */
+"wiz.connected.count" = "%d bombilla(s) WiZ";
+"wiz.connect" = "Añadir una bombilla WiZ";
+"wiz.hint" = "Bombillas WiZ (Signify) en la misma red. No se requiere configuración.";
+"wiz.ip.placeholder" = "Dirección IP (ej: 192.168.1.55)";
+"wiz.ip.hint" = "La IP es visible en la app WiZ (ajustes de la bombilla). Puerto UDP 38899.";
+
+/* Atajos */
+"shortcuts.title" = "Atajos de teclado";
+"shortcuts.subtitle" = "⌥0 Apagar · ⌥1-⌥4 Escenas";
+"shortcuts.header" = "Atajos de teclado globales";
+"shortcuts.detail" = "Controla tus lámparas sin abrir la app.";
+"shortcuts.save" = "Guardar atajos";
+
+/* Automatizaciones */
+"automations.title" = "Automatizaciones";
+"automations.empty" = "Programa tus lámparas";
+"automations.active.count" = "%d activa(s)";
+"automations.header" = "Automatizaciones";
+"automations.header.detail" = "Activa acciones a una hora fija, cada día o en ciertos días.";
+"automations.empty.message" = "Sin automatizaciones. Crea una a continuación.";
+"automations.new" = "Nueva automatización";
+"automation.name.placeholder" = "Nombre (ej: Apagado nocturno)";
+"automation.days" = "Días:";
+"automation.create" = "Crear";
+"automation.everyday" = "Cada día";
+"day.mon.letter" = "L";
+"day.tue.letter" = "M";
+"day.wed.letter" = "M";
+"day.thu.letter" = "J";
+"day.fri.letter" = "V";
+"day.sat.letter" = "S";
+"day.sun.letter" = "D";
+"day.mon" = "Lun";
+"day.tue" = "Mar";
+"day.wed" = "Mié";
+"day.thu" = "Jue";
+"day.fri" = "Vie";
+"day.sat" = "Sáb";
+"day.sun" = "Dom";
+
+/* Iluminación adaptativa */
+"circadian.title" = "Iluminación adaptativa";
+"circadian.subtitle.active" = "Activo";
+"circadian.subtitle.inactive" = "Ajusta temp. según la hora";
+"circadian.header" = "Iluminación adaptativa";
+"circadian.detail" = "Ajusta automáticamente el brillo y la temperatura según la hora.";
+"circadian.brightness" = "Brillo";
+"circadian.temperature" = "Temperatura";
+"circadian.apply.now" = "Aplicar ahora";
+
+/* Dispositivos */
+"devices.title" = "Dispositivos";
+"devices.subtitle" = "%d lámpara(s), %d en línea";
+"devices.detected" = "Lámparas detectadas";
+"devices.online" = "En línea";
+"devices.sync" = "Sincronización";
+"devices.sync.now" = "Sincronizar ahora";
+"devices.sync.hint" = "La lista de lámparas también se actualiza automáticamente cada minuto.";
+"devices.sync.required.hint" = "Configura la cuenta Tuya antes de sincronizar.";
+
+/* Actualizaciones */
+"updates.title" = "Actualizaciones";
+"updates.subtitle" = "Versión %@ (build %@)";
+"updates.auto.check" = "Verificar automáticamente";
+"updates.auto.check.detail" = "Una vez al día en segundo plano";
+"updates.auto.install" = "Instalar automáticamente";
+"updates.auto.install.detail" = "Descarga e instala sin confirmación";
+"updates.current.version" = "Versión actual";
+"updates.check.now" = "Verificar ahora";
+"updates.last.check" = "Última verificación: %@";
+
+/* Acerca de */
+"about.title" = "Acerca de";
+"about.subtitle" = "LampControl y diagnósticos";
+"about.app" = "Aplicación";
+"about.version" = "Versión";
+"about.storage" = "Almacenamiento";
+"about.storage.value" = "Keychain + archivos locales";
+"about.config.guide" = "Guía de configuración";
+
+/* Premium */
+"premium.title" = "Premium";
+"premium.lamps" = "Lámparas";
+"premium.lamps.unlimited" = "Ilimitadas";
+"premium.groups" = "Grupos";
+"premium.custom.scenes" = "Escenas personalizadas";
+"premium.quick.ambiances" = "Ambientes rápidos";
+"premium.activation" = "Activación";
+"premium.license.key" = "Clave de licencia";
+"premium.email" = "Email de compra";
+"premium.activate" = "Activar";
+"premium.reactivate" = "Reactivar";
+"premium.buy" = "Comprar Premium";
+"premium.early.access.note" = "Durante el Early Access, las funciones Premium permanecen activas. La validación de Lemon Squeezy está lista, sin secreto de API en la app.";
+"premium.active" = "Activo";
+"premium.locked" = "Premium";
+
+/* Licencia */
+"license.free" = "Gratuito";
+"license.premium" = "Premium";
+"license.early.access" = "Early Access";
+"license.status.free" = "Funciones básicas";
+"license.status.early.access" = "Premium activo durante la beta";
+"license.status.premium" = "Licencia activa";
+"license.none" = "No conectada";
+
+/* Acciones de automatización */
+"action.power.off.all" = "Apagar todo";
+"action.power.on.all" = "Encender todo";
+"action.scene" = "Escena %@";
+"action.apply.profile" = "Aplicar un perfil";
+"action.enable.adaptive" = "Activar iluminación adaptativa";
+"action.disable.adaptive" = "Desactivar iluminación adaptativa";
+
+/* Acciones de atajos */
+"shortcut.power.off.all" = "Apagar todo";
+"shortcut.power.on.all" = "Encender todo";
+"shortcut.scene.focus" = "Escena Focus";
+"shortcut.scene.relax" = "Escena Relax";
+"shortcut.scene.neon" = "Escena Neon";
+"shortcut.scene.night" = "Escena Noche";
+
+/* Escenas predefinidas */
+"scene.focus" = "Focus";
+"scene.relax" = "Relax";
+"scene.neon" = "Neon";
+"scene.night" = "Noche";
+
+/* Sincronización */
+"sync.never" = "Nunca";
+
+/* Menú contextual */
+"menu.open" = "Abrir LampControl";
+"menu.check.updates" = "Buscar actualizaciones\u{2026}";
+"menu.about" = "Acerca de LampControl v%@";
+"menu.quit" = "Salir";
