@@ -190,9 +190,10 @@ final class TuyaLightProvider: LightProvider {
     }
 
     private func postCommands(deviceId: String, commands: [TuyaCommand]) async throws {
+        let nativeID = lamps[deviceId]?.nativeID ?? deviceId
         do {
             let body = TuyaCommandBody(commands: commands)
-            let _: EmptyTuyaResult = try await client.post("/v1.0/devices/\(urlPath(deviceId))/commands", body: body)
+            let _: EmptyTuyaResult = try await client.post("/v1.0/devices/\(urlPath(nativeID))/commands", body: body)
         } catch {
             let codes = commands.map(\.code).joined(separator: ", ")
             throw LampControlError.tuya("\(error.localizedDescription) — commandes: \(codes)")

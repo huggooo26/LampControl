@@ -12,6 +12,15 @@ All notable changes to LampControl are documented here. The format follows
 - HomeKit bridge and automation triggers.
 - Full English UI localization.
 
+## [1.0.9] - 2026-05-02
+
+### Fixed
+
+- Tuya: commands (power, brightness, temperature, color) were sent to the wrong
+  API endpoint because the full prefixed device ID (`tuya:XXXXX`) was used
+  instead of the native device ID. Sync worked correctly; only control actions
+  were affected.
+
 ## [1.0.8] - 2026-04-28
 
 ### Added
