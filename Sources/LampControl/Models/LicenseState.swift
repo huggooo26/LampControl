@@ -29,7 +29,6 @@ struct LicenseEntitlements: Codable, Equatable {
     var canUseGroups: Bool
     var canUseCustomScenes: Bool
     var canUseScenePresets: Bool
-    var canUseProfiles: Bool
     var canUseAutomations: Bool
     var canUseAdaptiveLighting: Bool
 
@@ -38,7 +37,6 @@ struct LicenseEntitlements: Codable, Equatable {
         canUseGroups: false,
         canUseCustomScenes: false,
         canUseScenePresets: true,
-        canUseProfiles: false,
         canUseAutomations: false,
         canUseAdaptiveLighting: false
     )
@@ -48,7 +46,6 @@ struct LicenseEntitlements: Codable, Equatable {
         canUseGroups: true,
         canUseCustomScenes: true,
         canUseScenePresets: true,
-        canUseProfiles: true,
         canUseAutomations: true,
         canUseAdaptiveLighting: true
     )

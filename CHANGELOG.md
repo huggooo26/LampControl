@@ -8,6 +8,24 @@ All notable changes to LampControl are documented here. The format follows
 
 ### Planned
 
+## [1.0.15] - 2026-05-02
+
+### Changed
+
+- **Profils fusionnés dans les Scènes** — `UserLightScene` gère désormais deux
+  modes : "Couleur" (comportement existant, applique une couleur aux lampes RGB)
+  et "Capturer" (snapshot complet de l'état de toutes les lampes : power,
+  brightness, température, couleur). Un toggle dans l'éditeur de scène permet
+  de choisir le mode à la création. Les scènes de type capture affichent un
+  badge visuel distinctif sur le chip.
+- `LampProfile`, `ProfileStore`, `ProfileBar`, `SaveProfileButton` supprimés.
+- `LicenseEntitlements.canUseProfiles` supprimé (les captures sont couvertes
+  par `canUseCustomScenes`).
+- `AppState` : +`captureCurrentState()`, +`applyCapture(snapshots:name:)` ;
+  `saveUserScene` accepte désormais un paramètre `snapshots`.
+
+### Fixed
+
 - Apple notarization and Developer ID signature.
 - HomeKit / Matter bridge.
 - WidgetKit macOS widget (requires Xcode project restructure).

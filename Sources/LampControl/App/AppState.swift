@@ -11,7 +11,6 @@ final class AppState: ObservableObject {
     @Published var nanoleafSettings = NanoleafSettings()
     @Published var wizSettings = WizSettings()
     @Published var shortcutSettings = ShortcutSettings.default
-    @Published var profiles: [LampProfile] = []
     @Published var automations: [Automation] = []
     @Published var circadianSettings = CircadianSettings.default
     @Published var discoveredHueBridges: [HueBridge] = []
@@ -40,7 +39,6 @@ final class AppState: ObservableObject {
     private let nanoleafSettingsStore = NanoleafSettingsStore()
     private let wizSettingsStore = WizSettingsStore()
     private let shortcutSettingsStore = ShortcutSettingsStore()
-    private let profileStore = ProfileStore()
     private let automationStore = AutomationStore()
     private let circadianSettingsStore = CircadianSettingsStore()
     private let automationScheduler = AutomationScheduler()
@@ -65,7 +63,6 @@ final class AppState: ObservableObject {
             loadNanoleafSettings()
             loadWizSettings()
             loadShortcutSettings()
-            loadProfiles()
             loadAutomations()
             loadCircadianSettings()
             await syncLamps(silent: true)
@@ -389,10 +386,6 @@ final class AppState: ObservableObject {
             height += 8 + 38
         }
 
-        if !profiles.isEmpty {
-            height += 8 + 76
-        }
-
         if lamps.contains(where: { $0.capabilities.colorCode != nil }) {
             height += 8 + 64
             height += 8 + (isGroupPanelExpanded || selectedLampIds.count >= 2 ? 206 : 54)
@@ -470,33 +463,72 @@ final class AppState: ObservableObject {
             return
         }
 
-        await applyScene(title: scene.title, color: scene.color)
+        if let snapshots = scene.snapshots {
+            await applyCapture(snapshots: snapshots, name: scene.title)
+        } else {
+            await applyScene(title: scene.title, color: scene.color)
+        }
     }
 
-    func saveUserScene(id: UUID?, title: String, icon: String, color: HSVColor) {
+    func saveUserScene(id: UUID?, title: String, icon: String, color: HSVColor, snapshots: [LampSnapshot]? = nil) {
         guard licenseState.entitlements.canUseCustomScenes else {
             message = "Les scènes personnalisées sont incluses dans Premium."
             return
         }
 
         let cleanTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !cleanTitle.isEmpty else {
-            message = "Nom de scène requis."
-            return
-        }
-
+        guard !cleanTitle.isEmpty else { message = "Nom de scène requis."; return }
         let cleanIcon = icon.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "paintpalette.fill" : icon.trimmingCharacters(in: .whitespacesAndNewlines)
+
         if let id, let index = userScenes.firstIndex(where: { $0.id == id }) {
             userScenes[index].title = cleanTitle
             userScenes[index].icon = cleanIcon
             userScenes[index].color = color
-            message = "Scène \(cleanTitle) mise à jour."
+            userScenes[index].snapshots = snapshots
+            message = "Scène « \(cleanTitle) » mise à jour."
         } else {
-            userScenes.append(UserLightScene(title: cleanTitle, icon: cleanIcon, color: color))
-            message = "Scène \(cleanTitle) créée."
+            userScenes.append(UserLightScene(title: cleanTitle, icon: cleanIcon, color: color, snapshots: snapshots))
+            message = "Scène « \(cleanTitle) » créée."
         }
-
         persistScenes()
+    }
+
+    func captureCurrentState() -> [LampSnapshot] {
+        lamps.map { lamp in
+            LampSnapshot(
+                lampId: lamp.id,
+                nativeID: lamp.nativeID,
+                providerID: lamp.providerID,
+                name: lamp.name,
+                power: lamp.power,
+                brightness: lamp.brightness,
+                temperature: lamp.temperature,
+                color: lamp.color
+            )
+        }
+    }
+
+    private func applyCapture(snapshots: [LampSnapshot], name: String) async {
+        guard !snapshots.isEmpty else { return }
+        await runBusy {
+            var updated: [LampDevice] = []
+            for snap in snapshots {
+                guard let lamp = lamps.first(where: { $0.id == snap.lampId && $0.online }) else { continue }
+                let provider = try makeLightProvider(for: lamp)
+                if let color = snap.color, lamp.capabilities.colorCode != nil {
+                    updated.append(try await provider.setColor(deviceId: lamp.nativeID, color: color))
+                } else if let brightness = snap.brightness, lamp.capabilities.brightness != nil {
+                    updated.append(try await provider.setBrightness(deviceId: lamp.nativeID, value: brightness))
+                } else if let temp = snap.temperature, lamp.capabilities.temperature != nil {
+                    updated.append(try await provider.setTemperature(deviceId: lamp.nativeID, value: temp))
+                }
+                if !snap.power {
+                    updated.append(try await provider.setPower(deviceId: lamp.nativeID, value: false))
+                }
+            }
+            for lamp in updated { updateLamp(lamp) }
+            message = "Scène « \(name) » appliquée."
+        }
     }
 
     func deleteUserScene(_ scene: UserLightScene) {
@@ -877,75 +909,6 @@ final class AppState: ObservableObject {
         shortcutSettings = (try? shortcutSettingsStore.load()) ?? .default
     }
 
-    // MARK: - Profiles
-
-    func saveCurrentProfile(name: String, icon: String) {
-        guard licenseState.entitlements.canUseProfiles else {
-            message = "Les profils sont inclus dans Premium."
-            return
-        }
-        guard !lamps.isEmpty else {
-            message = "Aucune lampe à sauvegarder."
-            return
-        }
-        let snapshots = lamps.map { lamp in
-            LampSnapshot(
-                lampId: lamp.id,
-                nativeID: lamp.nativeID,
-                providerID: lamp.providerID,
-                name: lamp.name,
-                power: lamp.power,
-                brightness: lamp.brightness,
-                temperature: lamp.temperature,
-                color: lamp.color
-            )
-        }
-        let profile = LampProfile(name: name, icon: icon, snapshots: snapshots)
-        profiles.append(profile)
-        try? profileStore.save(profiles)
-        message = "Profil « \(name) » sauvegardé."
-    }
-
-    func applyProfile(_ profile: LampProfile) async {
-        guard licenseState.entitlements.canUseProfiles else {
-            message = "Les profils sont inclus dans Premium."
-            return
-        }
-        guard !profile.snapshots.isEmpty else {
-            message = "Ce profil est vide."
-            return
-        }
-        await runBusy {
-            var updated: [LampDevice] = []
-            for snap in profile.snapshots {
-                guard let lamp = lamps.first(where: { $0.id == snap.lampId && $0.online }) else { continue }
-                let provider = try makeLightProvider(for: lamp)
-                if let color = snap.color, lamp.capabilities.colorCode != nil {
-                    updated.append(try await provider.setColor(deviceId: lamp.nativeID, color: color))
-                } else if let brightness = snap.brightness, lamp.capabilities.brightness != nil {
-                    updated.append(try await provider.setBrightness(deviceId: lamp.nativeID, value: brightness))
-                } else if let temp = snap.temperature, lamp.capabilities.temperature != nil {
-                    updated.append(try await provider.setTemperature(deviceId: lamp.nativeID, value: temp))
-                }
-                if !snap.power {
-                    updated.append(try await provider.setPower(deviceId: lamp.nativeID, value: false))
-                }
-            }
-            for lamp in updated { updateLamp(lamp) }
-            message = "Profil « \(profile.name) » appliqué."
-        }
-    }
-
-    func deleteProfile(_ profile: LampProfile) {
-        profiles.removeAll { $0.id == profile.id }
-        try? profileStore.save(profiles)
-        message = "Profil supprimé."
-    }
-
-    private func loadProfiles() {
-        profiles = (try? profileStore.load()) ?? []
-    }
-
     // MARK: - Automations
 
     func saveAutomation(_ automation: Automation) {
@@ -988,8 +951,8 @@ final class AppState: ObservableObject {
                 await applyScene(preset)
             }
         case .applyProfile(let id):
-            if let profile = profiles.first(where: { $0.id == id }) {
-                await applyProfile(profile)
+            if let scene = userScenes.first(where: { $0.id == id }) {
+                await applyScene(scene)
             }
         case .enableAdaptiveLighting:
             await setAdaptiveLighting(enabled: true)
