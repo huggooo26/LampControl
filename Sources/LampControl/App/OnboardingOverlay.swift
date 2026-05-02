@@ -7,6 +7,11 @@ struct OnboardingOverlay: View {
         ZStack {
             LCTheme.overlayScrim
                 .ignoresSafeArea()
+                .onTapGesture {
+                    withAnimation(.spring(response: 0.28, dampingFraction: 0.88)) {
+                        appState.dismissOnboarding()
+                    }
+                }
 
             VStack(alignment: .leading, spacing: 14) {
                 header
@@ -14,8 +19,13 @@ struct OnboardingOverlay: View {
                 actions
             }
             .padding(16)
-            .frame(width: 350)
+            .frame(maxWidth: 380)
             .liquidGlassSurface(radius: 24, tint: Color.white.opacity(0.08))
+
+            Button("Fermer") { appState.dismissOnboarding() }
+                .keyboardShortcut(.escape, modifiers: [])
+                .frame(width: 0, height: 0)
+                .opacity(0)
         }
     }
 
@@ -94,9 +104,9 @@ private struct OnboardingStepRow: View {
         HStack(spacing: 10) {
             Text(number)
                 .font(.system(size: 11, weight: .bold))
-                .foregroundStyle(Color.white)
-                .frame(width: 24, height: 24)
-                .background(LCTheme.accent, in: Circle())
+                .foregroundStyle(LCTheme.accent)
+                .frame(width: 26, height: 26)
+                .background(LCTheme.accent.opacity(0.15), in: Circle())
 
             VStack(alignment: .leading, spacing: 1) {
                 Text(title)

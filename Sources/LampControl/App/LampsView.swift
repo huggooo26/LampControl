@@ -89,7 +89,7 @@ struct LampsView: View {
 
     private var emptyStateCard: some View {
         HStack(spacing: 10) {
-            Image(systemName: "lightbulb.slash")
+            Image(systemName: "lightbulb.slash.fill")
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(muted)
                 .frame(width: 28, height: 28)
@@ -153,7 +153,7 @@ struct LampsView: View {
             Button {
                 Task { await appState.syncLamps() }
             } label: {
-                Image(systemName: "arrow.clockwise")
+                Image(systemName: "arrow.clockwise.circle.fill")
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(accent)
                     .frame(width: 30, height: 30)
@@ -340,7 +340,7 @@ private struct SceneChip: View {
     var body: some View {
         VStack(spacing: 4) {
             Image(systemName: icon)
-                .font(.system(size: 11, weight: .semibold))
+                .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(Color(hsv: color))
                 .frame(height: 13)
 
@@ -350,8 +350,9 @@ private struct SceneChip: View {
                 .lineLimit(1)
         }
         .frame(width: 62)
-        .frame(height: 44)
+        .frame(height: 52)
         .liquidGlassSurface(radius: 15, tint: Color(hsv: color).opacity(0.10), interactive: true)
+        .shadow(color: Color.black.opacity(0.10), radius: 4, y: 2)
     }
 }
 
@@ -368,7 +369,8 @@ private struct MetricPill: View {
                 .frame(width: 18, height: 18)
             VStack(alignment: .leading, spacing: 0) {
                 Text(value)
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.system(size: 15, weight: .semibold))
+                    .monospacedDigit()
                     .foregroundStyle(LCTheme.ink)
                 Text(label)
                     .font(.system(size: 9, weight: .medium))
@@ -422,7 +424,7 @@ private struct GroupCompactBar: View {
             Button {
                 appState.selectAllRGBLamps()
             } label: {
-                Text("RGB")
+                Label("RGB", systemImage: "circle.hexagongrid.fill")
                     .font(.system(size: 11, weight: .bold))
                     .foregroundStyle(accent)
                     .padding(.horizontal, 10)
@@ -617,7 +619,7 @@ private struct LampRow: View {
 
     private var rowSummary: some View {
         HStack(spacing: 9) {
-            Image(systemName: lamp.power ? "power.circle.fill" : "power.circle")
+            Image(systemName: lamp.power ? "lightbulb.fill" : "lightbulb")
                 .font(.system(size: 18, weight: .semibold))
                 .foregroundStyle(lamp.power ? Color(red: 0.96, green: 0.67, blue: 0.16) : muted.opacity(0.72))
                 .frame(width: 22)
@@ -631,7 +633,8 @@ private struct LampRow: View {
                 HStack(spacing: 5) {
                     Circle()
                         .fill(lamp.online ? (lamp.power ? Color.blue.opacity(0.68) : Color.gray.opacity(0.45)) : Color.red.opacity(0.55))
-                        .frame(width: 5, height: 5)
+                        .frame(width: 7, height: 7)
+                        .shadow(color: lamp.online && lamp.power ? Color.blue.opacity(0.55) : (lamp.online ? Color.clear : Color.red.opacity(0.40)), radius: 4)
                     Text(compactStatus)
                         .font(.system(size: 10, weight: .medium))
                         .foregroundStyle(muted)
@@ -701,6 +704,7 @@ private struct LampRow: View {
                             Task { await appState.commitBrightness(lamp, value: brightnessValue(for: brightness)) }
                         }
                     )
+                    .tint(Color(red: 0.96, green: 0.77, blue: 0.26))
                     .disabled(!lamp.online)
 
                     Text("\(brightnessPercentage(for: brightness))%")
@@ -828,7 +832,10 @@ private struct LampRow: View {
     }
 
     private func temperatureLabel(for capability: NumericCapability) -> String {
-        "\(temperaturePercentage(for: capability))% blanc"
+        let pct = temperaturePercentage(for: capability)
+        if pct < 30 { return "Chaud" }
+        if pct > 70 { return "Froid" }
+        return "\(pct)%"
     }
 
     private var currentColorValue: Int {
@@ -881,7 +888,7 @@ private struct ColorSwatch: View {
         Circle()
             .fill(Color(hsv: color))
             .frame(width: size, height: size)
-            .overlay(Circle().stroke(Color.white.opacity(0.85), lineWidth: 2))
+            .overlay(Circle().stroke(Color.white.opacity(0.55), lineWidth: 1.5))
             .shadow(color: Color.black.opacity(0.12), radius: 5, x: 0, y: 2)
     }
 }

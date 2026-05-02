@@ -617,7 +617,7 @@ final class AppState: ObservableObject {
     }
 
     func openConfigurationGuide() {
-        guard let url = URL(string: "https://github.com/huggooo26/LampControl/blob/main/docs/CONFIGURATION.fr.md") else { return }
+        guard let url = URL(string: "https://github.com/hugoinformatique/LampControl/blob/main/docs/CONFIGURATION.fr.md") else { return }
         NSWorkspace.shared.open(url)
     }
 

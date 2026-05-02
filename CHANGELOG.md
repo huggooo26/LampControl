@@ -12,6 +12,32 @@ All notable changes to LampControl are documented here. The format follows
 - HomeKit bridge and automation triggers.
 - Full English UI localization.
 
+## [1.0.11] - 2026-05-02
+
+### Changed
+
+- **LampsView**: Lamp icon changed to lightbulb (more semantic), SceneChips
+  taller (52px) with shadow, MetricPill values larger and monospaced, RGB group
+  button now shows an icon, status dot larger with glow effect, brightness
+  slider tinted amber, temperature label shows Chaud/Froid instead of %, color
+  swatch border subtler, sync button uses circle variant.
+- **ControlCenterView**: Error messages now shown with red icon and tinted
+  surface (vs. blue for info). Status dot pulses when auto-syncing. Active tab
+  has bottom capsule indicator. Added semantic color tokens to LCTheme
+  (error, errorSurface, infoSurface, success).
+- **SettingsView**: Configured providers highlighted in green. Provider rows
+  have hover glass surface. All save buttons height standardized to 38px.
+  API key fields have autocorrection disabled. Hint text blocks now show info
+  icon. Fixed old GitHub username in configuration guide URL.
+- **OnboardingOverlay**: Background scrim tappable to dismiss. Escape key
+  dismisses. Step circles use accent tint instead of filled circles. Card
+  width flexible (maxWidth 380).
+
+### Fixed
+
+- `openConfigurationGuide()` URL was pointing to old GitHub username
+  (`huggooo26`) — fixed to `hugoinformatique` in both AppState and SettingsView.
+
 ## [1.0.10] - 2026-05-02
 
 ### Fixed

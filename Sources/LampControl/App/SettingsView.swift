@@ -70,7 +70,7 @@ struct SettingsView: View {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 12, weight: .bold))
                         .foregroundStyle(accent)
-                        .frame(width: 32, height: 32)
+                        .frame(width: 34, height: 34)
                 }
                 .liquidGlassButtonStyle()
                 .help("Retour")
@@ -163,7 +163,7 @@ struct SettingsView: View {
         HStack(spacing: 10) {
             Image(systemName: providerIcon(provider))
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(isConfigured ? Color.green : (provider.isImplemented ? accent : muted))
+                .foregroundStyle(isConfigured ? Color.green.opacity(0.85) : (provider.isImplemented ? accent : muted))
                 .frame(width: 30, height: 30)
                 .liquidGlassSurface(radius: 11, tint: isConfigured ? Color.green.opacity(0.10) : nil)
 
@@ -187,6 +187,9 @@ struct SettingsView: View {
             }
             .liquidGlassButtonStyle()
         }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .liquidGlassSurface(radius: 16, interactive: true)
     }
 
     private func providerIcon(_ provider: LightProviderKind) -> String {
@@ -333,6 +336,7 @@ struct SettingsView: View {
                 SecureField(appState.lifxSettings.isConfigured ? "Token LIFX enregistré" : "Token LIFX", text: $appState.lifxSettings.token)
                     .textFieldStyle(.plain)
                     .foregroundStyle(ink)
+                    .autocorrectionDisabled()
                     .padding(.horizontal, 12)
                     .frame(height: 38)
                     .liquidGlassSurface(radius: 13, tint: Color.white.opacity(0.08), interactive: true)
@@ -381,6 +385,7 @@ struct SettingsView: View {
                 SecureField(appState.goveeSettings.isConfigured ? "Clé API enregistrée" : "Clé API Govee", text: $appState.goveeSettings.apiKey)
                     .textFieldStyle(.plain)
                     .foregroundStyle(ink)
+                    .autocorrectionDisabled()
                     .padding(.horizontal, 12)
                     .frame(height: 38)
                     .liquidGlassSurface(radius: 13, tint: Color.white.opacity(0.08), interactive: true)
@@ -592,7 +597,7 @@ struct SettingsView: View {
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(Color.white)
                         .frame(maxWidth: .infinity)
-                        .frame(height: 40)
+                        .frame(height: 38)
                 }
                 .liquidGlassButtonStyle(prominent: true)
                 .tint(accent)
@@ -606,7 +611,7 @@ struct SettingsView: View {
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(isSetupComplete ? Color.white : muted)
                         .frame(width: 108)
-                        .frame(height: 40)
+                        .frame(height: 38)
                 }
                 .liquidGlassButtonStyle(prominent: isSetupComplete)
                 .tint(accent)
@@ -625,6 +630,7 @@ struct SettingsView: View {
             SecureField(appState.hasSecret ? "Secret enregistré" : "Access Secret", text: $appState.settings.accessSecret)
                 .textFieldStyle(.plain)
                 .foregroundStyle(ink)
+                .autocorrectionDisabled()
                 .padding(.horizontal, 12)
                 .frame(height: 38)
                 .liquidGlassSurface(radius: 13, tint: Color.white.opacity(0.08), interactive: true)
@@ -649,8 +655,8 @@ struct SettingsView: View {
             .padding(.horizontal, 12)
             .frame(height: 38)
             .liquidGlassSurface(radius: 13, tint: Color.white.opacity(0.08), interactive: true)
-            .onChange(of: appState.settings.region) { region in
-                appState.settings.applyEndpoint(for: region)
+            .onChange(of: appState.settings.region) { _ in
+                appState.settings.applyEndpoint(for: appState.settings.region)
             }
         }
     }
@@ -670,7 +676,7 @@ struct SettingsView: View {
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(Color.white)
                     .frame(maxWidth: .infinity)
-                    .frame(height: 40)
+                    .frame(height: 38)
             }
             .liquidGlassButtonStyle(prominent: true)
             .tint(accent)
@@ -708,7 +714,7 @@ struct SettingsView: View {
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(Color.white)
                     .frame(maxWidth: .infinity)
-                    .frame(height: 40)
+                    .frame(height: 38)
             }
             .liquidGlassButtonStyle(prominent: true)
             .tint(accent)
@@ -736,7 +742,7 @@ struct SettingsView: View {
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(accent)
                     .frame(maxWidth: .infinity)
-                    .frame(height: 40)
+                    .frame(height: 38)
             }
             .liquidGlassButtonStyle()
         }
@@ -757,6 +763,7 @@ struct SettingsView: View {
             TextField(title, text: text)
                 .textFieldStyle(.plain)
                 .foregroundStyle(ink)
+                .autocorrectionDisabled()
                 .padding(.horizontal, 12)
                 .frame(height: 38)
                 .liquidGlassSurface(radius: 13, tint: Color.white.opacity(0.08), interactive: true)
@@ -808,12 +815,18 @@ struct SettingsView: View {
     }
 
     private func hint(_ text: String) -> some View {
-        Text(text)
-            .font(.system(size: 11, weight: .medium))
-            .foregroundStyle(muted)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 3)
-            .fixedSize(horizontal: false, vertical: true)
+        HStack(alignment: .top, spacing: 5) {
+            Image(systemName: "info.circle")
+                .font(.system(size: 10))
+                .foregroundStyle(accent)
+                .padding(.top, 1)
+            Text(text)
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(muted)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 3)
     }
 
     private var syncSummary: String {
@@ -843,7 +856,7 @@ struct SettingsView: View {
     }
 
     private func openConfigurationGuide() {
-        guard let url = URL(string: "https://github.com/huggooo26/LampControl/blob/main/docs/CONFIGURATION.fr.md") else { return }
+        guard let url = URL(string: "https://github.com/hugoinformatique/LampControl/blob/main/docs/CONFIGURATION.fr.md") else { return }
         NSWorkspace.shared.open(url)
     }
 }

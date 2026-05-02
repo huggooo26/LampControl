@@ -100,9 +100,19 @@ struct ControlCenterView: View {
                     .font(.system(size: 17, weight: .semibold))
                     .foregroundStyle(ink)
                 HStack(spacing: 6) {
-                    Circle()
-                        .fill(appState.canSync ? Color.blue.opacity(0.70) : Color.gray.opacity(0.45))
-                        .frame(width: 6, height: 6)
+                    ZStack {
+                        Circle()
+                            .fill(appState.canSync ? Color.blue.opacity(0.70) : Color.gray.opacity(0.45))
+                            .frame(width: 6, height: 6)
+                        if appState.canSync {
+                            Circle()
+                                .stroke(Color.blue.opacity(0.40), lineWidth: 1.5)
+                                .frame(width: 6, height: 6)
+                                .scaleEffect(appState.isAutoSyncing ? 2.0 : 1.0)
+                                .opacity(appState.isAutoSyncing ? 0 : 0.6)
+                                .animation(appState.isAutoSyncing ? .easeOut(duration: 1.0).repeatForever(autoreverses: false) : .default, value: appState.isAutoSyncing)
+                        }
+                    }
                     Text(appState.canSync ? "Cloud actif" : "Configuration requise")
                         .font(.system(size: 11, weight: .medium))
                         .foregroundStyle(muted)
@@ -117,7 +127,7 @@ struct ControlCenterView: View {
                     .frame(width: 34, height: 34)
             }
             .liquidGlassButtonStyle()
-            .help("Quitter l'app")
+            .help("Quitter LampControl")
         }
     }
 
@@ -148,15 +158,37 @@ struct ControlCenterView: View {
                     tint: isActive ? accent.opacity(0.58) : Color.clear,
                     interactive: true
                 )
+                .overlay(alignment: .bottom) {
+                    if isActive {
+                        Capsule()
+                            .fill(accent.opacity(0.85))
+                            .frame(width: 28, height: 2)
+                            .padding(.bottom, 5)
+                    }
+                }
         }
         .buttonStyle(.plain)
     }
 
+    private var isErrorMessage: Bool {
+        let lowered = appState.message.lowercased()
+        return lowered.contains("erreur") || lowered.contains("error") ||
+               lowered.contains("impossible") || lowered.contains("inconnue") ||
+               lowered.contains("invalide") || lowered.contains("failed") ||
+               lowered.contains("échec")
+    }
+
     private var messageView: some View {
         HStack(spacing: 8) {
-            Image(systemName: "info.circle")
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(accent)
+            if isErrorMessage {
+                Image(systemName: "exclamationmark.circle.fill")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(LCTheme.error)
+            } else {
+                Image(systemName: "info.circle")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(accent)
+            }
             Text(appState.message)
                 .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(ink)
@@ -165,7 +197,7 @@ struct ControlCenterView: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 9)
-        .liquidGlassSurface(radius: 15, tint: Color.blue.opacity(0.08))
+        .liquidGlassSurface(radius: 15, tint: isErrorMessage ? LCTheme.errorSurface : LCTheme.infoSurface)
     }
 
 }
@@ -235,4 +267,9 @@ enum LCTheme {
     static let strokeMiddle = Color(nsColor: .separatorColor).opacity(0.26)
     static let strokeBottom = Color.black.opacity(0.06)
     static let overlayScrim = Color.black.opacity(0.28)
+
+    static let success = Color.green.opacity(0.80)
+    static let error = Color.red.opacity(0.80)
+    static let errorSurface = Color.red.opacity(0.10)
+    static let infoSurface = Color.blue.opacity(0.08)
 }
