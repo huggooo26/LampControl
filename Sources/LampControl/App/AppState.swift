@@ -359,54 +359,41 @@ final class AppState: ObservableObject {
 
     private var preferredPopoverHeight: CGFloat {
         let height: CGFloat
-
         switch selectedTab {
-        case .settings:
-            height = 740
-        case .lamps:
-            height = lampsPopoverHeight
+        case .settings: height = 740
+        case .lamps:    height = lampsPopoverHeight
         }
-
-        return min(max(height, 330), 760)
+        let screenMax = (NSScreen.main?.visibleFrame.height ?? 900) - 80
+        return min(max(height, 300), screenMax)
     }
 
     private var lampsPopoverHeight: CGFloat {
-        var height: CGFloat = 32
-        height += 42
-        height += 12 + 42
-
-        if !message.isEmpty {
-            height += 12 + 42
-        }
-
-        height += 8 + 36
-        height += 8 + 40
-
-        if !canSync {
-            height += 8 + 38
-        }
-
+        // Outer VStack padding (16 top + 16 bottom)
+        var h: CGFloat = 32
+        // Header + spacing + tabs
+        h += 42 + 12 + 42
+        // spacing + message
+        if !message.isEmpty { h += 12 + 46 }
+        // spacing + statusBar (compact single row: ~42px)
+        h += 8 + 42
+        // onboarding / empty card
+        if !canSync || (lamps.isEmpty && !isAutoSyncing) { h += 8 + 46 }
+        // ScenePresetBar: chips 52px + padding(10) top+bottom = 72
         if lamps.contains(where: { $0.capabilities.colorCode != nil }) {
-            height += 8 + 64
-            height += 8 + (isGroupPanelExpanded || selectedLampIds.count >= 2 ? 206 : 54)
+            h += 8 + 72
+            h += 8 + (isGroupPanelExpanded || selectedLampIds.count >= 2 ? 212 : 50)
         }
-
-        if hiddenLampCount > 0 {
-            height += 8 + 46
-        }
-
-        if !visibleLamps.isEmpty {
-            height += 8
-        }
-
+        // premium limit card
+        if hiddenLampCount > 0 { h += 8 + 46 }
+        // lamp rows
+        if !visibleLamps.isEmpty { h += 8 }
         for lamp in visibleLamps {
-            height += expandedLampIds.contains(lamp.id) ? expandedLampRowHeight(for: lamp) : 48
+            h += expandedLampIds.contains(lamp.id) ? expandedLampRowHeight(for: lamp) : 48
         }
-
-        height += CGFloat(max(0, visibleLamps.count - 1)) * 8
-        height += 10
-
-        return height
+        h += CGFloat(max(0, visibleLamps.count - 1)) * 8
+        // bottom inner spacing
+        h += 16
+        return h
     }
 
     private func expandedLampRowHeight(for lamp: LampDevice) -> CGFloat {

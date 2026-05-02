@@ -19,8 +19,7 @@ struct LampsView: View {
 
     private var content: some View {
         VStack(spacing: 8) {
-            overview
-            syncBar
+            statusBar
 
             if !appState.canSync {
                 onboardingCard
@@ -28,7 +27,6 @@ struct LampsView: View {
                 emptyStateCard
             }
 
-            // Scenes + group controls: only if there are RGB-capable lamps
             if appState.lamps.contains(where: { $0.capabilities.colorCode != nil }) {
                 ScenePresetBar()
                 GroupControlEntry()
@@ -38,16 +36,11 @@ struct LampsView: View {
                 premiumLimitCard
             }
 
-            ScrollView {
-                LazyVStack(spacing: 8) {
-                    ForEach(appState.visibleLamps) { lamp in
-                        LampRow(lamp: lamp)
-                    }
+            LazyVStack(spacing: 8) {
+                ForEach(appState.visibleLamps) { lamp in
+                    LampRow(lamp: lamp)
                 }
-                .padding(.bottom, 2)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .scrollIndicators(.hidden)
         }
         .foregroundStyle(ink)
     }
@@ -112,12 +105,66 @@ struct LampsView: View {
         .liquidGlassSurface(radius: 16)
     }
 
-    private var overview: some View {
-        HStack(spacing: 8) {
-            MetricPill(value: "\(appState.visibleLamps.count)", label: "lampes", icon: "lightbulb.2")
-            MetricPill(value: "\(appState.visibleLamps.filter(\.online).count)", label: "en ligne", icon: "wifi")
-            MetricPill(value: "\(appState.selectedLampIds.count)", label: "groupe", icon: "checkmark.circle")
+    private var statusBar: some View {
+        HStack(spacing: 10) {
+            // Sync status
+            Image(systemName: appState.isAutoSyncing ? "arrow.triangle.2.circlepath" : "bolt.horizontal.circle")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(muted)
+
+            Text(syncLabel)
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(muted)
+                .lineLimit(1)
+
+            Spacer(minLength: 4)
+
+            // Compact metrics
+            HStack(spacing: 6) {
+                Label("\(appState.visibleLamps.count)", systemImage: "lightbulb.2")
+                    .font(.system(size: 11, weight: .semibold).monospacedDigit())
+                    .foregroundStyle(ink)
+
+                Circle()
+                    .fill(appState.visibleLamps.filter(\.online).count > 0 ? Color.green.opacity(0.75) : Color.gray.opacity(0.40))
+                    .frame(width: 5, height: 5)
+
+                Text("\(appState.visibleLamps.filter(\.online).count) en ligne")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(muted)
+            }
+
+            // Circadian toggle
+            if appState.licenseState.entitlements.canUseAdaptiveLighting {
+                Button {
+                    Task { await appState.setAdaptiveLighting(enabled: !appState.circadianSettings.isEnabled) }
+                } label: {
+                    Image(systemName: appState.circadianSettings.isEnabled ? "sun.and.horizon.fill" : "sun.and.horizon")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(appState.circadianSettings.isEnabled ? Color.orange : muted.opacity(0.50))
+                        .frame(width: 28, height: 28)
+                        .liquidGlassSurface(radius: 10, tint: appState.circadianSettings.isEnabled ? Color.orange.opacity(0.15) : nil, interactive: true)
+                }
+                .buttonStyle(.plain)
+                .help(appState.circadianSettings.isEnabled ? "Éclairage adaptatif actif — désactiver" : "Activer l'éclairage adaptatif")
+            }
+
+            // Sync button
+            Button { Task { await appState.syncLamps() } } label: {
+                Image(systemName: "arrow.clockwise.circle.fill")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(accent)
+                    .frame(width: 28, height: 28)
+                    .liquidGlassSurface(radius: 10, interactive: true)
+            }
+            .buttonStyle(.plain)
+            .disabled(appState.isBusy || !appState.canSync)
+            .opacity(appState.isBusy || !appState.canSync ? 0.45 : 1)
+            .help("Synchroniser maintenant")
         }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 7)
+        .liquidGlassSurface(radius: 14)
     }
 
     private var premiumLimitCard: some View {
@@ -139,57 +186,10 @@ struct LampsView: View {
         .liquidGlassSurface(radius: 16, tint: Color.yellow.opacity(0.08))
     }
 
-    private var syncBar: some View {
-        HStack(spacing: 8) {
-            HStack(spacing: 7) {
-                Image(systemName: appState.isAutoSyncing ? "arrow.triangle.2.circlepath" : "bolt.horizontal.circle")
-                    .font(.system(size: 13, weight: .semibold))
-                Text(syncLabel)
-                    .font(.system(size: 12, weight: .medium))
-            }
-            .foregroundStyle(muted)
-
-            Spacer()
-
-            // Circadian indicator — tap to toggle, subtle when inactive
-            if appState.licenseState.entitlements.canUseAdaptiveLighting {
-                Button {
-                    Task { await appState.setAdaptiveLighting(enabled: !appState.circadianSettings.isEnabled) }
-                } label: {
-                    Image(systemName: appState.circadianSettings.isEnabled ? "sun.and.horizon.fill" : "sun.and.horizon")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(appState.circadianSettings.isEnabled ? Color.orange : muted.opacity(0.55))
-                        .frame(width: 30, height: 30)
-                        .liquidGlassSurface(radius: 12, tint: appState.circadianSettings.isEnabled ? Color.orange.opacity(0.15) : nil, interactive: true)
-                }
-                .buttonStyle(.plain)
-                .help(appState.circadianSettings.isEnabled ? "Éclairage adaptatif actif — désactiver" : "Activer l'éclairage adaptatif")
-            }
-
-            Button {
-                Task { await appState.syncLamps() }
-            } label: {
-                Image(systemName: "arrow.clockwise.circle.fill")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(accent)
-                    .frame(width: 30, height: 30)
-                    .liquidGlassSurface(radius: 12, interactive: true)
-            }
-            .buttonStyle(.plain)
-            .disabled(appState.isBusy || !appState.canSync)
-            .opacity(appState.isBusy || !appState.canSync ? 0.45 : 1)
-            .help("Synchroniser maintenant")
-        }
-        .padding(.leading, 12)
-        .padding(.trailing, 5)
-        .padding(.vertical, 5)
-        .liquidGlassSurface(radius: 17)
-    }
-
     private var syncLabel: String {
         if appState.isAutoSyncing { return "Mise à jour..." }
-        guard let lastSyncDate = appState.lastSyncDate else { return "Auto-sync 1 min" }
-        return "Synchro \(lastSyncDate.formatted(date: .omitted, time: .shortened))"
+        guard let d = appState.lastSyncDate else { return "Auto-sync" }
+        return "Synchro \(d.formatted(date: .omitted, time: .shortened))"
     }
 }
 
@@ -254,7 +254,7 @@ private struct ScenePresetBar: View {
                 }
                 .padding(.horizontal, 2)
             }
-            .scrollIndicators(.hidden)
+            .scrollIndicators(.never)
 
             if isEditing {
                 sceneEditor.transition(.opacity.combined(with: .move(edge: .top)))
@@ -422,35 +422,6 @@ private struct SceneChip: View {
         .frame(height: 52)
         .liquidGlassSurface(radius: 15, tint: (isCapture ? LCTheme.accent : Color(hsv: color)).opacity(0.10), interactive: true)
         .shadow(color: Color.black.opacity(0.10), radius: 4, y: 2)
-    }
-}
-
-private struct MetricPill: View {
-    let value: String
-    let label: String
-    let icon: String
-
-    var body: some View {
-        HStack(spacing: 8) {
-            Image(systemName: icon)
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(LCTheme.accent)
-                .frame(width: 18, height: 18)
-            VStack(alignment: .leading, spacing: 0) {
-                Text(value)
-                    .font(.system(size: 15, weight: .semibold))
-                    .monospacedDigit()
-                    .foregroundStyle(LCTheme.ink)
-                Text(label)
-                    .font(.system(size: 9, weight: .medium))
-                    .foregroundStyle(LCTheme.muted)
-            }
-            Spacer(minLength: 0)
-        }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6)
-        .frame(maxWidth: .infinity)
-        .liquidGlassSurface(radius: 16)
     }
 }
 
